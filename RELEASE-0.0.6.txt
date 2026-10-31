@@ -1,0 +1,53 @@
+dontfeartheripper 0.0.6
+
+Highlights
+----------
+
+- Added dftr stats command
+- Added JSON statistics output
+- Added stable statistics schema (v1)
+- Added reusable statistics engine
+- Added statistics test suite
+
+Examples
+--------
+
+Human readable output:
+
+    dftr stats /music
+
+JSON output:
+
+    dftr stats /music --json
+
+JSON + jq:
+
+    dftr stats /music --json | jq .
+
+Other commands:
+
+    dftr doctor /music
+    dftr fix /music
+    dftr fix /music --yes
+    dftr undo
+
+Schema
+------
+
+{
+  "schema_version": 1,
+  "albums": 0,
+  "compilations": 0,
+  "soundtracks": 0,
+  "containers": 0,
+  "cryptic": 0,
+  "toc_files": 0,
+  "cue_files": 0,
+  "rename_candidates": 0,
+  "collisions": 0
+}
+
+License
+-------
+
+GPL-3.0

@@ -5,6 +5,7 @@ from pathlib import Path
 from rich import print
 
 from dontfeartheripper.scanner import scan_library
+from dontfeartheripper.stats import build_stats
 
 UNDO_FILE = Path(".dftr-last-rename.json")
 
@@ -182,73 +183,40 @@ def undo() -> None:
 
 
 @app.command()
-def stats(path: str = typer.Argument(".")) -> None:
+def stats(
+    path: str = typer.Argument("."),
+    json_output: bool = typer.Option(
+        False,
+        "--json",
+        help="Output statistics as JSON",
+    ),
+) -> None:
     items = scan_library(Path(path))
+    stats = build_stats(items)
 
-    albums = sum(
-        1 for item in items
-        if item.category == "album"
-    )
-
-    compilations = sum(
-        1 for item in items
-        if item.category == "compilation"
-    )
-
-    soundtracks = sum(
-        1 for item in items
-        if item.category == "soundtrack"
-    )
-
-    containers = sum(
-        1 for item in items
-        if item.container_directory
-    )
-
-    cryptic = sum(
-        1 for item in items
-        if item.cryptic
-    )
-
-    toc = sum(
-        1 for item in items
-        if item.has_toc
-    )
-
-    cue = sum(
-        1 for item in items
-        if item.has_cue
-    )
-
-    candidates = sum(
-        1 for item in items
-        if item.rename_candidate
-    )
-
-    collisions = sum(
-        1 for item in items
-        if item.rename_collision
-    )
+    if json_output:
+        print(json.dumps(stats, indent=2))
+        return
 
     print()
     print("[cyan]Library Statistics[/cyan]")
     print()
 
-    print(f"Albums:             {albums}")
-    print(f"Compilations:       {compilations}")
-    print(f"Soundtracks:        {soundtracks}")
+    print(f"Albums:             {stats['albums']}")
+    print(f"Compilations:       {stats['compilations']}")
+    print(f"Soundtracks:        {stats['soundtracks']}")
     print()
 
-    print(f"Containers:         {containers}")
-    print(f"Cryptic:            {cryptic}")
+    print(f"Containers:         {stats['containers']}")
+    print(f"Cryptic:            {stats['cryptic']}")
     print()
 
-    print(f"TOC files:          {toc}")
-    print(f"CUE files:          {cue}")
+    print(f"TOC files:          {stats['toc_files']}")
+    print(f"CUE files:          {stats['cue_files']}")
     print()
 
-    print(f"Rename candidates: {candidates}")
-    print(f"Collisions:         {collisions}")
+    print(f"Rename candidates: {stats['rename_candidates']}")
+    print(f"Collisions:         {stats['collisions']}")
 
 
 if __name__ == "__main__":

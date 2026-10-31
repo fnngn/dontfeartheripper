@@ -20,6 +20,10 @@ Generate statistics:
 
     dftr stats /music
 
+Generate JSON statistics:
+
+    dftr stats /music --json
+
 Preview rename operations:
 
     dftr fix /music
@@ -43,14 +47,6 @@ If necessary:
 
     dftr undo
 
-The fix command runs in dry-run mode by default.
-
-No files or directories are modified unless --yes is specified.
-
-The undo command restores the most recent successful rename operation using:
-
-    .dftr-last-rename.json
-
 ## Features
 
 - Detect cryptic directory names
@@ -62,8 +58,9 @@ The undo command restores the most recent successful rename operation using:
 - Generate rename suggestions
 - Detect rename collisions
 - Perform automatic folder renames
-- Undo the most recent rename operation
+- Undo previous rename operations
 - Generate library statistics
+- Export statistics as JSON
 
 ## Commands
 
@@ -75,9 +72,13 @@ Diagnose problems:
 
     dftr doctor /path/to/music
 
-Show statistics:
+Human readable statistics:
 
     dftr stats /path/to/music
+
+JSON statistics:
+
+    dftr stats /path/to/music --json
 
 Preview rename operations:
 
@@ -91,45 +92,26 @@ Rollback previous rename:
 
     dftr undo
 
-## Statistics
+## JSON Schema
+
+Version 1:
+
+{
+  "schema_version": 1,
+  "albums": 0,
+  "compilations": 0,
+  "soundtracks": 0,
+  "containers": 0,
+  "cryptic": 0,
+  "toc_files": 0,
+  "cue_files": 0,
+  "rename_candidates": 0,
+  "collisions": 0
+}
 
 Example:
 
-    Library Statistics
-
-    Albums:             12345
-    Compilations:         789
-    Soundtracks:          123
-
-    Containers:            54
-    Cryptic:                0
-
-    TOC files:          11000
-    CUE files:          10998
-
-    Rename candidates:     0
-    Collisions:            0
-
-## Metadata Sources
-
-Priority order:
-
-1. TOC
-2. FLAC tags
-3. album.nfo
-
-## Multi-Disc Releases
-
-Disc 1 keeps the normal album title:
-
-    Artist - Album
-
-Additional discs receive a suffix:
-
-    Artist - Album - CD 2
-    Artist - Album - CD 3
-
-Existing disc suffixes are preserved and never duplicated.
+    dftr stats /music --json | jq .
 
 ## License
 
