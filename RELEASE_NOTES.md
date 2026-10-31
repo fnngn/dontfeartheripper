@@ -1,4 +1,4 @@
-# dontfeartheripper v0.1.1
+# dontfeartheripper v0.1.2
 
 The first release that feels production-ready.
 

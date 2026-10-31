@@ -26,6 +26,72 @@ def is_low_quality_metadata(artist: str | None, album: str | None) -> bool:
     return False
 
 
+
+
+AUDIO_EXTENSIONS = {
+    ".flac",
+    ".mp3",
+    ".m4a",
+    ".aac",
+    ".ogg",
+    ".opus",
+    ".wav",
+    ".ape",
+    ".wv",
+}
+
+
+def has_audio_files(directory):
+
+    try:
+
+        for item in directory.iterdir():
+
+            if (
+                item.is_file()
+                and item.suffix.lower()
+                in AUDIO_EXTENSIONS
+            ):
+                return True
+
+    except Exception:
+
+        pass
+
+    return False
+
+
+def iter_album_dirs(root_directory):
+
+    seen = set()
+
+    for path in root_directory.rglob("*"):
+
+        if not path.is_dir():
+            continue
+
+        has_album_content = (
+            has_audio_files(path)
+            or list(path.glob("*.cue"))
+            or list(path.glob("*.CUE"))
+            or list(path.glob("*.toc"))
+            or list(path.glob("*.TOC"))
+            or (path / "album.nfo").exists()
+        )
+
+        if not has_album_content:
+            continue
+
+        resolved = path.resolve()
+
+        if resolved in seen:
+            continue
+
+        seen.add(resolved)
+
+        yield path
+
+
 def scan_library(root: Path) -> list:
     items = []
 
@@ -35,11 +101,14 @@ def scan_library(root: Path) -> list:
         if not cat_path.exists():
             continue
 
-        for album in cat_path.iterdir():
-            if not album.is_dir():
-                continue
+        for album in iter_album_dirs(
+            cat_path
+        ):
 
-            flacs = list(album.glob("*.flac"))
+            flacs = (
+                list(album.glob("*.flac"))
+                + list(album.glob("*.FLAC"))
+            )
             subdirs = [p for p in album.iterdir() if p.is_dir()]
 
             toc = list(album.glob("*.toc")) + list(album.glob("*.TOC"))

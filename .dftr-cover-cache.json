@@ -1,0 +1,152 @@
+{
+  "NoM (Nuisance of Majority)|Brains, Monkeys and the New World Order": {
+    "path": "/mnt/nas/media/Musik/album/NoM (Nuisance of Majority) - Brains, Monkeys and the New World Order",
+    "artist": "NoM (Nuisance of Majority)",
+    "album": "Brains, Monkeys and the New World Order",
+    "found": false,
+    "release": null,
+    "release_count": 0,
+    "selected_has_cover": false,
+    "cover_found": false,
+    "cover_url": null,
+    "target_file": "/mnt/nas/media/Musik/album/NoM (Nuisance of Majority) - Brains, Monkeys and the New World Order/cover.jpg"
+  },
+  "Heaven Shall Burn|VETO": {
+    "path": "/mnt/nas/media/Musik/album/Heaven Shall Burn - Veto",
+    "artist": "Heaven Shall Burn",
+    "album": "VETO",
+    "found": true,
+    "release": {
+      "id": "034b7027-5dc2-419d-96ed-e63c1bd53ab6",
+      "title": "Veto",
+      "release_count": 10,
+      "selected_has_cover": true,
+      "cover_url": "http://coverartarchive.org/release/034b7027-5dc2-419d-96ed-e63c1bd53ab6/8414007523.jpg"
+    },
+    "release_count": 10,
+    "selected_has_cover": true,
+    "cover_found": true,
+    "cover_url": "http://coverartarchive.org/release/034b7027-5dc2-419d-96ed-e63c1bd53ab6/8414007523.jpg",
+    "target_file": "/mnt/nas/media/Musik/album/Heaven Shall Burn - Veto/cover.jpg"
+  },
+  "The Alan Parsons Project|The Turn Of A Friendly Card": {
+    "path": "/mnt/nas/media/Musik/album/The Alan Parsons Project - The Turn of a Friendly Card",
+    "artist": "The Alan Parsons Project",
+    "album": "The Turn Of A Friendly Card",
+    "found": true,
+    "release": {
+      "id": "6bb67bd5-af28-48da-9e78-4b81209b68fa",
+      "title": "The Turn of a Friendly Card",
+      "release_count": 10,
+      "selected_has_cover": true,
+      "cover_url": "http://coverartarchive.org/release/6bb67bd5-af28-48da-9e78-4b81209b68fa/871951824.jpg"
+    },
+    "release_count": 10,
+    "selected_has_cover": true,
+    "cover_found": true,
+    "cover_url": "http://coverartarchive.org/release/6bb67bd5-af28-48da-9e78-4b81209b68fa/871951824.jpg",
+    "target_file": "/mnt/nas/media/Musik/album/The Alan Parsons Project - The Turn of a Friendly Card/cover.jpg"
+  },
+  "The Alan Parsons Project|Stereotomy": {
+    "path": "/mnt/nas/media/Musik/album/The Alan Parsons Project - Stereotomy",
+    "artist": "The Alan Parsons Project",
+    "album": "Stereotomy",
+    "found": true,
+    "release": {
+      "id": "dd301643-09c8-33e3-937d-0b7690b59324",
+      "title": "Stereotomy",
+      "release_count": 10,
+      "selected_has_cover": true,
+      "cover_url": "http://coverartarchive.org/release/dd301643-09c8-33e3-937d-0b7690b59324/24086781040.jpg"
+    },
+    "release_count": 10,
+    "selected_has_cover": true,
+    "cover_found": true,
+    "cover_url": "http://coverartarchive.org/release/dd301643-09c8-33e3-937d-0b7690b59324/24086781040.jpg",
+    "target_file": "/mnt/nas/media/Musik/album/The Alan Parsons Project - Stereotomy/cover.jpg"
+  },
+  "The Alan Parsons Project|Pyramid": {
+    "path": "/mnt/nas/media/Musik/album/The Alan Parsons Project - Pyramid",
+    "artist": "The Alan Parsons Project",
+    "album": "Pyramid",
+    "found": true,
+    "release": {
+      "id": "7a0a925f-3a31-3c12-adc6-0e006d216284",
+      "title": "Pyramid",
+      "release_count": 10,
+      "selected_has_cover": true,
+      "cover_url": "http://coverartarchive.org/release/7a0a925f-3a31-3c12-adc6-0e006d216284/8860742582.jpg"
+    },
+    "release_count": 10,
+    "selected_has_cover": true,
+    "cover_found": true,
+    "cover_url": "http://coverartarchive.org/release/7a0a925f-3a31-3c12-adc6-0e006d216284/8860742582.jpg",
+    "target_file": "/mnt/nas/media/Musik/album/The Alan Parsons Project - Pyramid/cover.jpg"
+  },
+  "None|None": {
+    "path": "/mnt/nas/media/Musik/soundtrack/The Outer Worlds 2 Soundtrack",
+    "artist": null,
+    "album": null,
+    "found": false,
+    "release": null,
+    "release_count": 0,
+    "selected_has_cover": false,
+    "cover_found": false,
+    "cover_url": null,
+    "target_file": "/mnt/nas/media/Musik/soundtrack/The Outer Worlds 2 Soundtrack/cover.jpg"
+  },
+  "Various Artists|Blues Brothers 2000: Original Motion Picture Soundtrack": {
+    "path": "/mnt/nas/media/Musik/soundtrack/Various Artists - Blues Brothers 2000\uf022 Original Motion Picture Soundtrack (Columbia House club edition)",
+    "artist": "Various Artists",
+    "album": "Blues Brothers 2000: Original Motion Picture Soundtrack",
+    "found": true,
+    "release": {
+      "id": "ca02f01d-7d11-4915-8985-f06d2e37f61e",
+      "title": "Blues Brothers 2000: Original Motion Picture Soundtrack",
+      "release_count": 10,
+      "selected_has_cover": true,
+      "cover_url": "http://coverartarchive.org/release/ca02f01d-7d11-4915-8985-f06d2e37f61e/24822690732.jpg"
+    },
+    "release_count": 10,
+    "selected_has_cover": true,
+    "cover_found": true,
+    "cover_url": "http://coverartarchive.org/release/ca02f01d-7d11-4915-8985-f06d2e37f61e/24822690732.jpg",
+    "target_file": "/mnt/nas/media/Musik/soundtrack/Various Artists - Blues Brothers 2000\uf022 Original Motion Picture Soundtrack (Columbia House club edition)/cover.jpg"
+  },
+  "Creedence Clearwater Revival|Chronicle": {
+    "path": "/mnt/nas/media/Musik/compilation/Creedence Clearwater Revival - Chronicle (silver disc face, made in Japan)",
+    "artist": "Creedence Clearwater Revival",
+    "album": "Chronicle",
+    "found": true,
+    "release": {
+      "id": "f9a8e98f-b58f-4039-b2a2-18cd835a65eb",
+      "title": "Chronicle",
+      "release_count": 10,
+      "selected_has_cover": true,
+      "cover_url": "http://coverartarchive.org/release/f9a8e98f-b58f-4039-b2a2-18cd835a65eb/8578824622.jpg"
+    },
+    "release_count": 10,
+    "selected_has_cover": true,
+    "cover_found": true,
+    "cover_url": "http://coverartarchive.org/release/f9a8e98f-b58f-4039-b2a2-18cd835a65eb/8578824622.jpg",
+    "target_file": "/mnt/nas/media/Musik/compilation/Creedence Clearwater Revival - Chronicle (silver disc face, made in Japan)/cover.jpg"
+  },
+  "The Alan Parsons Project|Gaudi": {
+    "path": "/mnt/nas/media/Musik/album/The Alan Parsons Project - Gaudi",
+    "artist": "The Alan Parsons Project",
+    "album": "Gaudi",
+    "found": true,
+    "release": {
+      "id": "fd14a98b-9ec2-486e-8b31-422c28b5d829",
+      "title": "Gaud\u00ed",
+      "release_count": 10,
+      "selected_has_cover": true,
+      "cover_url": "http://coverartarchive.org/release/fd14a98b-9ec2-486e-8b31-422c28b5d829/27608667073.jpg"
+    },
+    "release_count": 10,
+    "selected_has_cover": true,
+    "cover_found": true,
+    "cover_url": "http://coverartarchive.org/release/fd14a98b-9ec2-486e-8b31-422c28b5d829/27608667073.jpg",
+    "target_file": "/mnt/nas/media/Musik/album/The Alan Parsons Project - Gaudi/cover.jpg"
+  }
+}
