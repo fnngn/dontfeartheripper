@@ -1,16 +1,34 @@
 from dontfeartheripper.models import LibraryItem
 from dontfeartheripper.stats import build_stats
 
+
 def item(**kwargs):
-    return LibraryItem(
-        path=None,
-        flac_count=0,
-        has_toc=False,
-        has_cue=False,
-        category="album",
-        cryptic=False,
-        **kwargs,
-    )
+    defaults = {
+        "path": None,
+        "flac_count": 0,
+        "has_toc": False,
+        "has_cue": False,
+        "category": "album",
+        "cryptic": False,
+
+        "album_name": None,
+        "artist_name": None,
+        "disc_number": None,
+
+        "container_directory": False,
+        "metadata_source": "unknown",
+
+        "rename_candidate": False,
+        "suggested_name": None,
+        "rename_collision": False,
+
+        "track_count": 0,
+    }
+
+    defaults.update(kwargs)
+
+    return LibraryItem(**defaults)
+
 
 def test_stats_schema():
     stats = build_stats([])
@@ -27,6 +45,7 @@ def test_stats_schema():
         "rename_candidates",
         "collisions",
     }
+
 
 def test_stats_counting():
     stats = build_stats([
