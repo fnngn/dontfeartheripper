@@ -28,6 +28,7 @@ def scan_library(root: Path) -> list:
             album_name = None
             artist_name = None
             track_count = 0
+            container_directory = len(flacs) == 0 and len(subdirs) > 0
 
             if toc:
                 meta = parse_toc(toc[0])
@@ -60,6 +61,7 @@ def scan_library(root: Path) -> list:
                     cryptic=cryptic,
                     album_name=album_name,
                     artist_name=artist_name,
+                    container_directory=container_directory,
                     track_count=track_count,
                 )
             )

@@ -28,6 +28,10 @@ def scan(path: str = typer.Argument(".")) -> None:
         print(f"  toc={item.has_toc}")
         print(f"  cue={item.has_cue}")
 
+        if item.container_directory:
+            print("  container=yes")
+
+
         if item.cryptic:
             print("  cryptic=yes")
 
