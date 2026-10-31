@@ -3,6 +3,17 @@ from pathlib import Path
 from .models import LibraryItem
 from .toc import parse_toc
 from .tags import read_flac_tags
+from .utils import sanitize_filename
+
+
+def is_low_quality_metadata(artist: str | None, album: str | None) -> bool:
+    if artist == "Various":
+        return True
+
+    if album and album.startswith("MBB"):
+        return True
+
+    return False
 
 def scan_library(root: Path) -> list:
     items = []
@@ -30,6 +41,8 @@ def scan_library(root: Path) -> list:
             track_count = 0
             metadata_source = "unknown"
             container_directory = len(flacs) == 0 and len(subdirs) > 0
+            rename_candidate = False
+            suggested_name = None
 
             if toc:
                 meta = parse_toc(toc[0])
@@ -40,19 +53,36 @@ def scan_library(root: Path) -> list:
                 artist_name = meta["artist"]
                 track_count = meta["tracks"]
 
-            if flacs and (album_name is None or artist_name is None):
+            if flacs and (
+                album_name is None
+                or artist_name is None
+                or is_low_quality_metadata(artist_name, album_name)
+            ):
                 tags = read_flac_tags(flacs[0])
-
-                if tags["albumartist"]:
-                    artist_name = tags["albumartist"]
-
+                low_quality = is_low_quality_metadata(artist_name, album_name)
+                if low_quality:
+                    artist_name = tags["albumartist"] or tags["artist"]
+                    album_name = tags["album"]
                     metadata_source = "flac"
+                else:
+                    if tags["albumartist"]:
+                        artist_name = tags["albumartist"]
+                        metadata_source = "flac"
 
-                if album_name is None:
+                    if album_name is None:
+                        album_name = tags["album"]
+
                     album_name = tags["album"]
 
                 if artist_name is None:
                     artist_name = tags["artist"]
+
+            if cryptic and artist_name and album_name:
+                suggested_name = sanitize_filename(
+                    f"{artist_name} - {album_name}"
+                )
+                rename_candidate = True
+
 
 
 
@@ -68,6 +98,8 @@ def scan_library(root: Path) -> list:
                     artist_name=artist_name,
                     container_directory=container_directory,
                     metadata_source=metadata_source,
+                    rename_candidate=rename_candidate,
+                    suggested_name=suggested_name,
                     track_count=track_count,
                 )
             )

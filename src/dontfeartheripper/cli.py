@@ -3,6 +3,7 @@ from pathlib import Path
 from rich import print
 
 from dontfeartheripper.scanner import scan_library
+from dontfeartheripper.utils import sanitize_filename
 
 app = typer.Typer(help="dontfeartheripper v0.0.2-dev")
 
@@ -54,11 +55,30 @@ def doctor(path: str = typer.Argument(".")) -> None:
         if item.cryptic:
             print(f"[yellow]WARN[/yellow] {item.path.name}")
             print("  cryptic directory name")
+
+            if item.artist_name and item.album_name:
+                suggestion = sanitize_filename(f"{item.artist_name} - {item.album_name}")
+                print(f"  suggested name: {suggestion}")
+            elif item.album_name:
+                suggestion = sanitize_filename(item.album_name)
+                print(f"  suggested name: {suggestion}")
+
             print()
 
+
 @app.command()
-def fix(path: str = typer.Argument(".")):
-    print(f"Fixing: {path}")
+def fix(path: str = typer.Argument(".")) -> None:
+    items = scan_library(Path(path))
+
+    print("DRY RUN")
+
+    for item in items:
+        if not item.rename_candidate:
+            continue
+
+        print()
+        print(item.path.name)
+        print(f" -> {item.suggested_name}")
 
 if __name__ == "__main__":
     app()

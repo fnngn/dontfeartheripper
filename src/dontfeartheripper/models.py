@@ -14,3 +14,5 @@ class LibraryItem:
     track_count: int = 0
     metadata_source: str = "unknown"
     container_directory: bool = False
+    rename_candidate: bool = False
+    suggested_name: str | None = None
