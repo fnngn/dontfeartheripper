@@ -8,10 +8,19 @@ from .nfo import parse_album_nfo
 
 
 def is_low_quality_metadata(artist: str | None, album: str | None) -> bool:
-    if artist == "Various":
+    if not artist:
         return True
 
-    if album and album.startswith("MBB"):
+    if not album:
+        return True
+
+    if artist in (
+        "Various",
+        "VARIOUS",
+    ):
+        return True
+
+    if album.startswith("MBB"):
         return True
 
     return False

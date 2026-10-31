@@ -1,101 +1,97 @@
 # dontfeartheripper
 
-A small utility for cleaning up large FLAC collections that have been ripped over decades with tools like EAC, Whipper and CUERipper.
+Music library cleanup and repair tool for FLAC collections.
 
-## Quick Start
+## Features
 
-Inspect library:
+### Discovery
 
-    dftr doctor /music
+    dftr scan
+    dftr scan --json
 
-Quality report:
+### Diagnostics
 
-    dftr quality /music
+    dftr doctor
+    dftr doctor --json
 
-JSON quality report:
+### Statistics
 
-    dftr quality /music --json
+    dftr stats
+    dftr stats --json
 
-Statistics:
+### Quality Analysis
 
-    dftr stats /music
+    dftr quality
+    dftr quality --json
 
-JSON statistics:
+### Quality Repair
 
-    dftr stats /music --json
+    dftr repair
+    dftr repair --json
+    dftr repair --yes
 
-Library export:
+Rollback:
 
-    dftr scan /music --json
+    dftr repair-undo
 
-Preview rename operations:
+### Folder Repair
 
-    dftr fix /music
+Preview:
 
-Execute rename operations:
+    dftr fix
 
-    dftr fix /music --yes
+Apply:
+
+    dftr fix --yes
 
 Rollback:
 
     dftr undo
 
-## Commands
+## JSON API
 
-    dftr scan
-    dftr scan --json
-
-    dftr doctor
-    dftr doctor --json
-
-    dftr stats
-    dftr stats --json
-
-    dftr quality
-    dftr quality --json
-
-    dftr fix
-    dftr fix --yes
-
-    dftr undo
-
-## Quality Analysis
-
-Current rules:
-
-- missing_artist
-- missing_album
-- unknown_metadata_source
-- inconsistent_artist_naming
-- container_has_metadata
-
-Example:
-
-    Quality Score: 86%
-
-    WARN album/foo
-      missing_artist
-
-    WARN album/bar
-      inconsistent_artist_naming
-
-## JSON Support
+Machine readable output:
 
     dftr scan --json
     dftr doctor --json
     dftr stats --json
     dftr quality --json
+    dftr repair --json
 
 All JSON formats contain:
 
     schema_version
 
-for future compatibility.
+## Repair Rules
+
+Current automatic repairs:
+
+- missing_artist
+- various_uppercase
+- various_mixed
+
+## Safety
+
+All repair operations:
+
+- default to dry-run
+- support rollback
+- are validated before execution
+
+## Testing
+
+Run tests:
+
+    uv run pytest -v
+
+Current test coverage:
+
+- repair_missing_artist
+- repair_various_albumartist
+- container_is_never_repaired
+- quality_score_improves
+- scan_prefers_high_quality_flac_data
 
 ## License
 
-GNU General Public License v3.0 (GPL-3.0)
-
-## Why?
-
-Because life's too short to manually rename ten thousand FLAC albums.
+GPL-3.0

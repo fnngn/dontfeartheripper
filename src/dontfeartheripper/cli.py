@@ -8,6 +8,11 @@ from rich import print
 from dontfeartheripper.scanner import scan_library
 from dontfeartheripper.stats import build_stats
 from dontfeartheripper.quality import analyze_quality
+from dontfeartheripper.repair import (
+    analyze_repairs,
+    apply_repairs,
+    undo_repairs,
+)
 
 UNDO_FILE = Path(".dftr-last-rename.json")
 
@@ -330,6 +335,74 @@ def quality(
     print()
     print(f"Issues: {len(issues)}")
     print(f"Score: {report['quality_score']}%")
+
+
+@app.command()
+def repair(
+    path: str = typer.Argument("."),
+    json_output: bool = typer.Option(
+        False,
+        "--json",
+        help="Output repair plan as JSON",
+    ),
+    yes: bool = typer.Option(
+        False,
+        "--yes",
+        help="Apply repairs",
+    ),
+) -> None:
+    items = scan_library(Path(path))
+    report = analyze_repairs(items)
+
+    if json_output:
+        builtins.print(
+            json.dumps(report, indent=2)
+        )
+        return
+
+    repairs = report["repairs"]
+
+    if not repairs:
+        print()
+        print("[green]No repairs found.[/green]")
+        return
+
+    if not yes:
+        print()
+        print("[yellow]DRY RUN[/yellow]")
+
+    rollback = []
+
+    for repair in repairs:
+        print()
+        print(repair["path"])
+        print(
+            f"  {repair['field']}: "
+            f'"{repair["old"]}" -> "{repair["new"]}"'
+        )
+
+        if yes:
+            rollback.append(repair)
+
+    print()
+    print(f"Repairs: {len(repairs)}")
+
+    if yes:
+        applied = apply_repairs(repairs)
+
+        print(f"Updated tags: {applied}")
+        print("Rollback file: .dftr-last-repair.json")
+    else:
+        print("No changes were made.")
+        print("Run with --yes to perform repairs.")
+
+
+@app.command("repair-undo")
+def repair_undo() -> None:
+    reverted = undo_repairs()
+
+    print()
+    print(f"Reverted tags: {reverted}")
 
 
 if __name__ == "__main__":

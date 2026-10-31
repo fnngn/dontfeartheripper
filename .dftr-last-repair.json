@@ -1,0 +1,275 @@
+[
+  {
+    "file": "/mnt/nas/media/Musik/album/Loyft - Rage of the Hedgehog/01. Loyft - Intro.flac",
+    "field": "artist",
+    "old": "Unknown Artist",
+    "new": "Loyft",
+    "rule": "missing_artist"
+  },
+  {
+    "file": "/mnt/nas/media/Musik/album/Loyft - Rage of the Hedgehog/02. Loyft - Purple Bird.flac",
+    "field": "artist",
+    "old": "Unknown Artist",
+    "new": "Loyft",
+    "rule": "missing_artist"
+  },
+  {
+    "file": "/mnt/nas/media/Musik/album/Loyft - Rage of the Hedgehog/03. Loyft - The invisible Suittrain.flac",
+    "field": "artist",
+    "old": "Unknown Artist",
+    "new": "Loyft",
+    "rule": "missing_artist"
+  },
+  {
+    "file": "/mnt/nas/media/Musik/album/Loyft - Rage of the Hedgehog/04. Loyft - Rage of the Hedgehog.flac",
+    "field": "artist",
+    "old": "Unknown Artist",
+    "new": "Loyft",
+    "rule": "missing_artist"
+  },
+  {
+    "file": "/mnt/nas/media/Musik/album/Loyft - Rage of the Hedgehog/05. Loyft - Tower.flac",
+    "field": "artist",
+    "old": "Unknown Artist",
+    "new": "Loyft",
+    "rule": "missing_artist"
+  },
+  {
+    "file": "/mnt/nas/media/Musik/album/Loyft - Rage of the Hedgehog/06. Loyft - Nuisance of Maturity.flac",
+    "field": "artist",
+    "old": "Unknown Artist",
+    "new": "Loyft",
+    "rule": "missing_artist"
+  },
+  {
+    "file": "/mnt/nas/media/Musik/album/Loyft - Rage of the Hedgehog/07. Loyft - The Worms way to majesty.flac",
+    "field": "artist",
+    "old": "Unknown Artist",
+    "new": "Loyft",
+    "rule": "missing_artist"
+  },
+  {
+    "file": "/mnt/nas/media/Musik/album/Loyft - Rage of the Hedgehog/08. Loyft - Dust of Men.flac",
+    "field": "artist",
+    "old": "Unknown Artist",
+    "new": "Loyft",
+    "rule": "missing_artist"
+  },
+  {
+    "file": "/mnt/nas/media/Musik/compilation/VARIOUS - BAR JAZZ 4 - CD 1/01. Al Hirt - Java.flac",
+    "field": "artist",
+    "old": "Al Hirt",
+    "new": "Various Artists",
+    "rule": "various_uppercase"
+  },
+  {
+    "file": "/mnt/nas/media/Musik/compilation/VARIOUS - BAR JAZZ 4 - CD 1/02. Duke Ellington & His Orchestra - Singin\u2019 in the Rain.flac",
+    "field": "artist",
+    "old": "Duke Ellington & His Orchestra",
+    "new": "Various Artists",
+    "rule": "various_uppercase"
+  },
+  {
+    "file": "/mnt/nas/media/Musik/compilation/VARIOUS - BAR JAZZ 4 - CD 1/03. The Dave Brubeck Quartet - Trolley Song.flac",
+    "field": "artist",
+    "old": "The Dave Brubeck Quartet",
+    "new": "Various Artists",
+    "rule": "various_uppercase"
+  },
+  {
+    "file": "/mnt/nas/media/Musik/compilation/VARIOUS - BAR JAZZ 4 - CD 1/04. Tony Bennett - Dancing in the Dark.flac",
+    "field": "artist",
+    "old": "Tony Bennett",
+    "new": "Various Artists",
+    "rule": "various_uppercase"
+  },
+  {
+    "file": "/mnt/nas/media/Musik/compilation/VARIOUS - BAR JAZZ 4 - CD 1/05. Stan Getz - Invitation.flac",
+    "field": "artist",
+    "old": "Stan Getz",
+    "new": "Various Artists",
+    "rule": "various_uppercase"
+  },
+  {
+    "file": "/mnt/nas/media/Musik/compilation/VARIOUS - BAR JAZZ 4 - CD 1/06. Ellis Marsalis - Dee Wee.flac",
+    "field": "artist",
+    "old": "Ellis Marsalis",
+    "new": "Various Artists",
+    "rule": "various_uppercase"
+  },
+  {
+    "file": "/mnt/nas/media/Musik/compilation/VARIOUS - BAR JAZZ 4 - CD 1/07. Grover Washington, Jr. - Soulful Strut.flac",
+    "field": "artist",
+    "old": "Grover Washington, Jr.",
+    "new": "Various Artists",
+    "rule": "various_uppercase"
+  },
+  {
+    "file": "/mnt/nas/media/Musik/compilation/VARIOUS - BAR JAZZ 4 - CD 1/08. Greg Adams - Metro.flac",
+    "field": "artist",
+    "old": "Greg Adams",
+    "new": "Various Artists",
+    "rule": "various_uppercase"
+  },
+  {
+    "file": "/mnt/nas/media/Musik/compilation/VARIOUS - BAR JAZZ 4 - CD 1/09. Art Blakey - Cubano Chant.flac",
+    "field": "artist",
+    "old": "Art Blakey",
+    "new": "Various Artists",
+    "rule": "various_uppercase"
+  },
+  {
+    "file": "/mnt/nas/media/Musik/compilation/VARIOUS - BAR JAZZ 4 - CD 1/10. Chris Connor - A Foggy Day.flac",
+    "field": "artist",
+    "old": "Chris Connor",
+    "new": "Various Artists",
+    "rule": "various_uppercase"
+  },
+  {
+    "file": "/mnt/nas/media/Musik/compilation/VARIOUS - BAR JAZZ 4 - CD 1/11. Betty Carter & Ray Bryant - The Way You Look Tonight.flac",
+    "field": "artist",
+    "old": "Betty Carter & Ray Bryant",
+    "new": "Various Artists",
+    "rule": "various_uppercase"
+  },
+  {
+    "file": "/mnt/nas/media/Musik/compilation/VARIOUS - BAR JAZZ 4 - CD 1/12. Bobby Hutcherson - Un poco, loco.flac",
+    "field": "artist",
+    "old": "Bobby Hutcherson",
+    "new": "Various Artists",
+    "rule": "various_uppercase"
+  },
+  {
+    "file": "/mnt/nas/media/Musik/compilation/VARIOUS - BAR JAZZ 4 - CD 1/13. David S\u00e1nchez - Bomba Blues.flac",
+    "field": "artist",
+    "old": "David S\u00e1nchez",
+    "new": "Various Artists",
+    "rule": "various_uppercase"
+  },
+  {
+    "file": "/mnt/nas/media/Musik/compilation/VARIOUS - BAR JAZZ 4 - CD 1/14. Ahmad Jamal - Rica Pulpa.flac",
+    "field": "artist",
+    "old": "Ahmad Jamal",
+    "new": "Various Artists",
+    "rule": "various_uppercase"
+  },
+  {
+    "file": "/mnt/nas/media/Musik/compilation/VARIOUS - BAR JAZZ 4 - CD 1/15. James Carter - Out of Nowhere.flac",
+    "field": "artist",
+    "old": "James Carter",
+    "new": "Various Artists",
+    "rule": "various_uppercase"
+  },
+  {
+    "file": "/mnt/nas/media/Musik/compilation/VARIOUS - BAR JAZZ 4 - CD 1/16. Harold Mabern Trio - Moment\u2019s Noice.flac",
+    "field": "artist",
+    "old": "Harold Mabern Trio",
+    "new": "Various Artists",
+    "rule": "various_uppercase"
+  },
+  {
+    "file": "/mnt/nas/media/Musik/compilation/VARIOUS - BAR JAZZ 4 - CD 2/01. Miles Davis - Someday My Prince Will Come.flac",
+    "field": "artist",
+    "old": "Miles Davis",
+    "new": "Various Artists",
+    "rule": "various_uppercase"
+  },
+  {
+    "file": "/mnt/nas/media/Musik/compilation/VARIOUS - BAR JAZZ 4 - CD 2/02. Tuck & Patti - Still Tossin\u2019 and Turnin\u2019 (remix).flac",
+    "field": "artist",
+    "old": "Tuck & Patti",
+    "new": "Various Artists",
+    "rule": "various_uppercase"
+  },
+  {
+    "file": "/mnt/nas/media/Musik/compilation/VARIOUS - BAR JAZZ 4 - CD 2/03. Stan Getz & Jo\u00e3o Gilberto - \u00c1guas de Mar\u00e7o.flac",
+    "field": "artist",
+    "old": "Stan Getz & Jo\u00e3o Gilberto",
+    "new": "Various Artists",
+    "rule": "various_uppercase"
+  },
+  {
+    "file": "/mnt/nas/media/Musik/compilation/VARIOUS - BAR JAZZ 4 - CD 2/05. Louis Armstrong - Do You Know What It Means to Miss New Orleans.flac",
+    "field": "artist",
+    "old": "Louis Armstrong",
+    "new": "Various Artists",
+    "rule": "various_uppercase"
+  },
+  {
+    "file": "/mnt/nas/media/Musik/compilation/VARIOUS - BAR JAZZ 4 - CD 2/06. Rosemary Clooney - I Let a Song Go Out of My Heart.flac",
+    "field": "artist",
+    "old": "Rosemary Clooney",
+    "new": "Various Artists",
+    "rule": "various_uppercase"
+  },
+  {
+    "file": "/mnt/nas/media/Musik/compilation/VARIOUS - BAR JAZZ 4 - CD 2/07. Greg Adams - Burma Road.flac",
+    "field": "artist",
+    "old": "Greg Adams",
+    "new": "Various Artists",
+    "rule": "various_uppercase"
+  },
+  {
+    "file": "/mnt/nas/media/Musik/compilation/VARIOUS - BAR JAZZ 4 - CD 2/08. The Hi\u2010Lo\u2019s - Stormy Weather.flac",
+    "field": "artist",
+    "old": "The Hi\u2010Lo\u2019s",
+    "new": "Various Artists",
+    "rule": "various_uppercase"
+  },
+  {
+    "file": "/mnt/nas/media/Musik/compilation/VARIOUS - BAR JAZZ 4 - CD 2/09. Gerry Mulligan - Here I\u2019ll Stay.flac",
+    "field": "artist",
+    "old": "Gerry Mulligan",
+    "new": "Various Artists",
+    "rule": "various_uppercase"
+  },
+  {
+    "file": "/mnt/nas/media/Musik/compilation/VARIOUS - BAR JAZZ 4 - CD 2/10. Baden Powell - Fim da Linha.flac",
+    "field": "artist",
+    "old": "Baden Powell",
+    "new": "Various Artists",
+    "rule": "various_uppercase"
+  },
+  {
+    "file": "/mnt/nas/media/Musik/compilation/VARIOUS - BAR JAZZ 4 - CD 2/11. Vienna D.C. - Dope Control.flac",
+    "field": "artist",
+    "old": "Vienna D.C.",
+    "new": "Various Artists",
+    "rule": "various_uppercase"
+  },
+  {
+    "file": "/mnt/nas/media/Musik/compilation/VARIOUS - BAR JAZZ 4 - CD 2/12. Black_Note - Dream of Elizabeth Brown.flac",
+    "field": "artist",
+    "old": "Black/Note",
+    "new": "Various Artists",
+    "rule": "various_uppercase"
+  },
+  {
+    "file": "/mnt/nas/media/Musik/compilation/VARIOUS - BAR JAZZ 4 - CD 2/13. Kirk Whalum - Peaceful Hideaway.flac",
+    "field": "artist",
+    "old": "Kirk Whalum",
+    "new": "Various Artists",
+    "rule": "various_uppercase"
+  },
+  {
+    "file": "/mnt/nas/media/Musik/compilation/VARIOUS - BAR JAZZ 4 - CD 2/14. Dave McKenna - Secret Love.flac",
+    "field": "artist",
+    "old": "Dave McKenna",
+    "new": "Various Artists",
+    "rule": "various_uppercase"
+  },
+  {
+    "file": "/mnt/nas/media/Musik/compilation/VARIOUS - BAR JAZZ 4 - CD 2/15. Ray Bryant - On Green Dolphin Street.flac",
+    "field": "artist",
+    "old": "Ray Bryant",
+    "new": "Various Artists",
+    "rule": "various_uppercase"
+  },
+  {
+    "file": "/mnt/nas/media/Musik/compilation/VARIOUS - BAR JAZZ 4 - CD 2/16. Antonio Hart - Ama tu sonrisa.flac",
+    "field": "artist",
+    "old": "Antonio Hart",
+    "new": "Various Artists",
+    "rule": "various_uppercase"
+  }
+]
