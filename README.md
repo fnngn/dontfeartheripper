@@ -92,7 +92,67 @@ Current quality checks:
 
 ---
 
-### Metadata Repair
+---
+
+### Cover Art Management
+
+Find missing cover art:
+
+    dftr cover /music
+
+Search MusicBrainz and Cover Art Archive:
+
+    dftr cover /music --fetch
+
+Preview cover downloads:
+
+    dftr cover /music --plan
+
+Download cover art:
+
+    dftr cover /music --yes
+
+Features:
+
+- MusicBrainz release matching
+- Cover Art Archive integration
+- download planning
+- progress reporting
+- error handling
+- JSON output
+- Jellyfin-compatible cover naming
+
+Cover policy:
+
+Recognized filenames:
+
+    cover.*
+    folder.*
+    front.*
+    artwork.*
+    albumart.*
+
+Supported formats:
+
+    jpg
+    jpeg
+    png
+
+Artwork detection is recursive.
+
+Downloaded artwork is normalized to:
+
+    cover.jpg
+
+This is compatible with:
+
+- Jellyfin
+- Plex
+- Kodi
+- Navidrome
+
+---
+\n### Metadata Repair
 
 Preview repairs:
 
@@ -161,6 +221,22 @@ Apply repairs:
 
     dftr repair /music --yes
 
+Find missing cover art:
+
+    dftr cover /music
+
+Lookup cover candidates:
+
+    dftr cover /music --fetch
+
+Preview downloads:
+
+    dftr cover /music --plan
+
+Download cover art:
+
+    dftr cover /music --yes
+
 Verify improvements:
 
     dftr quality /music
@@ -184,6 +260,10 @@ Machine-readable output is available for:
     dftr stats --json
     dftr quality --json
     dftr repair --json
+    dftr cover --fetch --json
+    dftr cover --plan --json
+    dftr cover --fetch --json
+    dftr cover --plan --json
 
 All JSON outputs include:
 
