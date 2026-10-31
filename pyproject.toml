@@ -1,16 +1,21 @@
 [project]
 name = "dontfeartheripper"
-version = "0.1.0"
+version = "0.0.1"
 description = "Add your description here"
 readme = "README.md"
 authors = [
     { name = "fnngn", email = "s.j.fischer@live.de" }
 ]
 requires-python = ">=3.14"
-dependencies = []
+dependencies = [
+    "mutagen>=1.48.1",
+    "requests>=2.34.2",
+    "rich>=15.0.0",
+    "typer>=0.27.3",
+]
 
 [project.scripts]
-dontfeartheripper = "dontfeartheripper:main"
+dftr = "dontfeartheripper.cli:app"
 
 [build-system]
 requires = ["uv_build>=0.13.6,<0.14.0"]
