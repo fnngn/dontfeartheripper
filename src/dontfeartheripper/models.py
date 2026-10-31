@@ -12,3 +12,5 @@ class LibraryItem:
     album_name: str | None = None
     artist_name: str | None = None
     track_count: int = 0
+    metadata_source: str = "unknown"
+    container_directory: bool = False

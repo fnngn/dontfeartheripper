@@ -18,6 +18,8 @@ def scan_library(root: Path) -> list:
                 continue
 
             flacs = list(album.glob("*.flac"))
+            subdirs = [p for p in album.iterdir() if p.is_dir()]
+
             toc = list(album.glob("*.toc")) + list(album.glob("*.TOC"))
             cue = list(album.glob("*.cue")) + list(album.glob("*.CUE"))
 
