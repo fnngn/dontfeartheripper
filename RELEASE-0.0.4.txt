@@ -1,0 +1,40 @@
+dontfeartheripper 0.0.4
+
+Highlights
+----------
+
+- Added rollback support
+- Added dftr undo command
+- Added rename history logging
+- Added safer rename workflow
+- Improved fix command output
+
+New Commands
+------------
+
+dftr undo
+
+The undo command reverts the most recent successful
+rename operation using the rollback file:
+
+    .dftr-last-rename.json
+
+Workflow
+--------
+
+Preview:
+
+    dftr fix /music
+
+Execute:
+
+    dftr fix /music --yes
+
+Undo:
+
+    dftr undo
+
+License
+-------
+
+GPL-3.0

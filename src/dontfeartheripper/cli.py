@@ -1,10 +1,14 @@
+import json
 import typer
+
 from pathlib import Path
 from rich import print
 
 from dontfeartheripper.scanner import scan_library
 
-app = typer.Typer(help="dontfeartheripper v0.0.3-dev")
+UNDO_FILE = Path(".dftr-last-rename.json")
+
+app = typer.Typer(help="dontfeartheripper v0.0.4-dev")
 
 
 @app.command()
@@ -76,6 +80,7 @@ def fix(
 
     renamed = 0
     candidates = 0
+    rollback = []
 
     if not yes:
         print("[yellow]DRY RUN[/yellow]")
@@ -106,6 +111,13 @@ def fix(
         print(f" -> {item.suggested_name}")
 
         if yes:
+            rollback.append(
+                {
+                    "from": str(item.path),
+                    "to": str(target),
+                }
+            )
+
             item.path.rename(target)
             renamed += 1
 
@@ -116,11 +128,57 @@ def fix(
         return
 
     if yes:
+        UNDO_FILE.write_text(
+            json.dumps(rollback, indent=2)
+        )
+
         print(f"Renamed: {renamed}")
+
+        if renamed:
+            print(f"Rollback file: {UNDO_FILE}")
     else:
         print(f"Candidates: {candidates}")
         print("No changes were made.")
         print("Run with --yes to perform the rename.")
+
+
+@app.command()
+def undo() -> None:
+    if not UNDO_FILE.exists():
+        print("No rollback file found.")
+        return
+
+    operations = json.loads(
+        UNDO_FILE.read_text()
+    )
+
+    reverted = 0
+
+    for entry in reversed(operations):
+        old_path = Path(entry["from"])
+        new_path = Path(entry["to"])
+
+        if not new_path.exists():
+            print()
+            print(f"SKIP {new_path}")
+            print(" target missing")
+            continue
+
+        if old_path.exists():
+            print()
+            print(f"SKIP {old_path}")
+            print(" original path already exists")
+            continue
+
+        print()
+        print(f"UNDO {new_path.name}")
+        print(f"  -> {old_path.name}")
+
+        new_path.rename(old_path)
+        reverted += 1
+
+    print()
+    print(f"Reverted: {reverted}")
 
 
 if __name__ == "__main__":
