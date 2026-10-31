@@ -68,7 +68,7 @@ def doctor(path: str = typer.Argument(".")) -> None:
 def fix(path: str = typer.Argument(".")) -> None:
     items = scan_library(Path(path))
 
-    print("DRY RUN")
+    renamed = 0
 
     for item in items:
         if not item.rename_candidate:
@@ -81,9 +81,23 @@ def fix(path: str = typer.Argument(".")) -> None:
             print(f" target: {item.suggested_name}")
             continue
 
+        target = item.path.parent / item.suggested_name
+
+        if target.exists():
+            print()
+            print(f"SKIP {item.path.name}")
+            print(f" target already exists: {target.name}")
+            continue
+
         print()
-        print(item.path.name)
-        print(f" -> {item.suggested_name}")
+        print(f"RENAME {item.path.name}")
+        print(f"    -> {item.suggested_name}")
+
+        item.path.rename(target)
+        renamed += 1
+
+    print()
+    print(f"Renamed: {renamed}")
 
 if __name__ == "__main__":
     app()

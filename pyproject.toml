@@ -1,7 +1,7 @@
 [project]
 name = "dontfeartheripper"
 version = "0.0.1"
-description = "Add your description here"
+description = "Music library cleanup and rename tool for FLAC collections"
 readme = "README.md"
 authors = [
     { name = "fnngn", email = "s.j.fischer@live.de" }
