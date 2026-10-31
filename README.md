@@ -2,33 +2,29 @@
 
 A small utility for cleaning up large FLAC collections that have been ripped over decades with tools like EAC, Whipper and CUERipper.
 
-If your library contains directories like
-
-    VOR4RQ~J
-    VECENK~E
-    VHVOJJ~K
-
-instead of actual album names, this tool is for you.
-
 ## Quick Start
 
-Inspect your library:
+Inspect library:
 
     dftr doctor /music
 
-Generate JSON diagnostics:
+Quality report:
 
-    dftr doctor /music --json
+    dftr quality /music
 
-Generate statistics:
+JSON quality report:
+
+    dftr quality /music --json
+
+Statistics:
 
     dftr stats /music
 
-Generate JSON statistics:
+JSON statistics:
 
     dftr stats /music --json
 
-Export complete library metadata:
+Library export:
 
     dftr scan /music --json
 
@@ -40,26 +36,9 @@ Execute rename operations:
 
     dftr fix /music --yes
 
-Undo the most recent rename operation:
+Rollback:
 
     dftr undo
-
-## Features
-
-- Detect cryptic directory names
-- Parse TOC metadata
-- Recover metadata from FLAC tags
-- Read album.nfo files
-- Detect multi-disc releases
-- Detect container/discography directories
-- Generate rename suggestions
-- Detect rename collisions
-- Perform automatic folder renames
-- Undo previous rename operations
-- Generate library statistics
-- Export scan results as JSON
-- Export diagnostics as JSON
-- Export statistics as JSON
 
 ## Commands
 
@@ -72,49 +51,46 @@ Undo the most recent rename operation:
     dftr stats
     dftr stats --json
 
+    dftr quality
+    dftr quality --json
+
     dftr fix
     dftr fix --yes
 
     dftr undo
 
-## JSON Support
+## Quality Analysis
 
-The following commands support structured JSON output:
+Current rules:
+
+- missing_artist
+- missing_album
+- unknown_metadata_source
+- inconsistent_artist_naming
+- container_has_metadata
+
+Example:
+
+    Quality Score: 86%
+
+    WARN album/foo
+      missing_artist
+
+    WARN album/bar
+      inconsistent_artist_naming
+
+## JSON Support
 
     dftr scan --json
     dftr doctor --json
     dftr stats --json
+    dftr quality --json
 
 All JSON formats contain:
 
-    "schema_version": 1
+    schema_version
 
-to support future schema evolution.
-
-## Scan JSON Schema
-
-{
-  "schema_version": 1,
-  "items": [
-    {
-      "path": "...",
-      "category": "album",
-      "artist": "...",
-      "album": "...",
-      "tracks": 0,
-      "flacs": 0,
-      "has_toc": false,
-      "has_cue": false,
-      "metadata_source": "unknown",
-      "container": false,
-      "cryptic": false,
-      "rename_candidate": false,
-      "suggested_name": null,
-      "disc_number": null,
-      "rename_collision": false
-    }
-  ]
-}
+for future compatibility.
 
 ## License
 

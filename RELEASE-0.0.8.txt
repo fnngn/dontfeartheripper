@@ -3,58 +3,48 @@ dontfeartheripper 0.0.8
 Highlights
 ----------
 
-- Added scan --json
-- Added machine-readable library export
-- Added versioned scan JSON schema
-- Completed JSON support for scan, doctor and stats
-- Improved integration support for external tools
+- Added quality command
+- Added quality scoring
+- Added quality JSON export
+- Added metadata quality analysis
+- Added issue classification
+- Added machine-readable quality reports
+
+Commands
+--------
+
+Quality report:
+
+    dftr quality /music
+
+JSON quality report:
+
+    dftr quality /music --json
 
 Examples
 --------
 
-Scan:
+Human readable:
 
-    dftr scan /music
+    dftr quality /music
 
-JSON scan:
+JSON:
 
-    dftr scan /music --json
+    dftr quality /music --json | jq .
 
-Diagnostics:
+Current checks
+--------------
 
-    dftr doctor /music
+- missing_artist
+- missing_album
+- unknown_metadata_source
+- inconsistent_artist_naming
+- container_has_metadata
 
-JSON diagnostics:
+Quality Score
+-------------
 
-    dftr doctor /music --json
-
-Statistics:
-
-    dftr stats /music
-
-JSON statistics:
-
-    dftr stats /music --json
-
-Rename preview:
-
-    dftr fix /music
-
-Rename:
-
-    dftr fix /music --yes
-
-Rollback:
-
-    dftr undo
-
-Scan JSON Schema
-----------------
-
-{
-  "schema_version": 1,
-  "items": []
-}
+Starts at 100 and subtracts points for detected issues.
 
 License
 -------

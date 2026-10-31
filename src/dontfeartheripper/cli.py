@@ -7,6 +7,7 @@ from rich import print
 
 from dontfeartheripper.scanner import scan_library
 from dontfeartheripper.stats import build_stats
+from dontfeartheripper.quality import analyze_quality
 
 UNDO_FILE = Path(".dftr-last-rename.json")
 
@@ -291,6 +292,44 @@ def stats(
 
     print(f"Rename candidates: {stats['rename_candidates']}")
     print(f"Collisions:         {stats['collisions']}")
+
+
+@app.command()
+def quality(
+    path: str = typer.Argument("."),
+    json_output: bool = typer.Option(
+        False,
+        "--json",
+        help="Output quality report as JSON",
+    ),
+) -> None:
+    items = scan_library(Path(path))
+    report = analyze_quality(items)
+
+    if json_output:
+        builtins.print(
+            json.dumps(report, indent=2)
+        )
+        return
+
+    issues = report["issues"]
+
+    print()
+    print(f"[cyan]Quality Score:[/cyan] {report['quality_score']}%")
+
+    if not issues:
+        print()
+        print("[green]No quality issues found.[/green]")
+        return
+
+    for issue in issues:
+        print()
+        print(f"[yellow]WARN[/yellow] {issue['path']}")
+        print(f"  {issue['type']}")
+
+    print()
+    print(f"Issues: {len(issues)}")
+    print(f"Score: {report['quality_score']}%")
 
 
 if __name__ == "__main__":
