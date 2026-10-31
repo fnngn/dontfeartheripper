@@ -1,0 +1,62 @@
+dontfeartheripper 0.0.8
+
+Highlights
+----------
+
+- Added scan --json
+- Added machine-readable library export
+- Added versioned scan JSON schema
+- Completed JSON support for scan, doctor and stats
+- Improved integration support for external tools
+
+Examples
+--------
+
+Scan:
+
+    dftr scan /music
+
+JSON scan:
+
+    dftr scan /music --json
+
+Diagnostics:
+
+    dftr doctor /music
+
+JSON diagnostics:
+
+    dftr doctor /music --json
+
+Statistics:
+
+    dftr stats /music
+
+JSON statistics:
+
+    dftr stats /music --json
+
+Rename preview:
+
+    dftr fix /music
+
+Rename:
+
+    dftr fix /music --yes
+
+Rollback:
+
+    dftr undo
+
+Scan JSON Schema
+----------------
+
+{
+  "schema_version": 1,
+  "items": []
+}
+
+License
+-------
+
+GPL-3.0

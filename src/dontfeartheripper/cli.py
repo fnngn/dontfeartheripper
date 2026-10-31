@@ -1,3 +1,4 @@
+import builtins
 import json
 import typer
 
@@ -9,12 +10,49 @@ from dontfeartheripper.stats import build_stats
 
 UNDO_FILE = Path(".dftr-last-rename.json")
 
-app = typer.Typer(help="dontfeartheripper v0.0.4-dev")
+app = typer.Typer(help="dontfeartheripper v0.0.7-dev")
 
 
 @app.command()
-def scan(path: str = typer.Argument(".")) -> None:
+def scan(
+    path: str = typer.Argument("."),
+    json_output: bool = typer.Option(
+        False,
+        "--json",
+        help="Output scan as JSON",
+    ),
+) -> None:
     items = scan_library(Path(path))
+
+    if json_output:
+        report = {
+            "schema_version": 1,
+            "items": [],
+        }
+
+        for item in items:
+            report["items"].append(
+                {
+                    "path": str(item.path),
+                    "category": item.category,
+                    "artist": item.artist_name,
+                    "album": item.album_name,
+                    "tracks": item.track_count,
+                    "flacs": item.flac_count,
+                    "has_toc": item.has_toc,
+                    "has_cue": item.has_cue,
+                    "metadata_source": item.metadata_source,
+                    "container": item.container_directory,
+                    "cryptic": item.cryptic,
+                    "rename_candidate": item.rename_candidate,
+                    "suggested_name": item.suggested_name,
+                    "disc_number": item.disc_number,
+                    "rename_collision": item.rename_collision,
+                }
+            )
+
+        builtins.print(json.dumps(report, indent=2))
+        return
 
     for item in items:
         kind = item.category.upper()
@@ -82,7 +120,7 @@ def doctor(
                     }
                 )
 
-        print(json.dumps(report, indent=2))
+        builtins.print(json.dumps(report, indent=2))
         return
 
     for item in items:
@@ -231,7 +269,7 @@ def stats(
     stats = build_stats(items)
 
     if json_output:
-        print(json.dumps(stats, indent=2))
+        builtins.print(json.dumps(stats, indent=2))
         return
 
     print()
