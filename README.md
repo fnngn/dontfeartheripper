@@ -1,56 +1,188 @@
 # dontfeartheripper
 
-Music library cleanup and repair tool for FLAC collections.
+A tool for cleaning up large FLAC music collections.
+
+Over years of ripping CDs with tools such as Exact Audio Copy (EAC), CUERipper, Whipper and others, music libraries tend to accumulate inconsistencies:
+
+- cryptic directory names
+- incomplete metadata
+- broken compilation tags
+- missing artist information
+- duplicate naming conventions
+- mixed metadata quality
+
+dontfeartheripper helps identify and repair these issues while keeping every change reviewable and reversible.
+
+---
+
+## What Problem Does It Solve?
+
+Consider a library containing folders such as:
+
+    VOR4RQ~J
+    VECENK~E
+    VHVOJJ~K
+
+or albums with metadata like:
+
+    Artist: Unknown Artist
+    Album: Rage of the Hedgehog
+
+or compilations where album metadata contains:
+
+    VARIOUS
+
+instead of:
+
+    Various Artists
+
+dontfeartheripper analyzes the collection, identifies problems, suggests repairs and can automatically fix a number of common metadata issues.
+
+---
 
 ## Features
 
-### Discovery
+### Library Analysis
 
-    dftr scan
-    dftr scan --json
+Inspect albums, compilations and soundtracks:
+
+    dftr scan /music
+
+Export results as JSON:
+
+    dftr scan /music --json
 
 ### Diagnostics
 
-    dftr doctor
-    dftr doctor --json
+Detect cryptic directory names, metadata issues and problematic library structures:
+
+    dftr doctor /music
+
+JSON output:
+
+    dftr doctor /music --json
 
 ### Statistics
 
-    dftr stats
-    dftr stats --json
+Generate library statistics:
+
+    dftr stats /music
+
+JSON output:
+
+    dftr stats /music --json
 
 ### Quality Analysis
 
-    dftr quality
-    dftr quality --json
+Evaluate metadata quality across the library:
 
-### Quality Repair
+    dftr quality /music
 
-    dftr repair
-    dftr repair --json
-    dftr repair --yes
+Example:
 
-Rollback:
+    Quality Score: 86%
+
+    WARN album/foo
+      missing_artist
+
+    WARN compilation/bar
+      inconsistent_artist_naming
+
+JSON output:
+
+    dftr quality /music --json
+
+### Metadata Repair
+
+Preview metadata repairs:
+
+    dftr repair /music
+
+Apply repairs:
+
+    dftr repair /music --yes
+
+Undo metadata repairs:
 
     dftr repair-undo
 
-### Folder Repair
+### Directory Renaming
 
-Preview:
+Preview rename operations:
 
-    dftr fix
+    dftr fix /music
 
-Apply:
+Execute rename operations:
 
-    dftr fix --yes
+    dftr fix /music --yes
 
-Rollback:
+Undo the last rename batch:
 
     dftr undo
 
+---
+
+## Typical Workflow
+
+Analyze the collection:
+
+    dftr doctor /music
+    dftr quality /music
+
+Preview metadata repairs:
+
+    dftr repair /music
+
+Apply repairs:
+
+    dftr repair /music --yes
+
+Verify quality:
+
+    dftr quality /music
+
+Preview directory renames:
+
+    dftr fix /music
+
+Apply renames:
+
+    dftr fix /music --yes
+
+---
+
+## Repair Rules
+
+Current automatic repairs include:
+
+### Missing Artist Detection
+
+Before:
+
+    Artist: Unknown Artist
+    Folder: Loyft - Rage of the Hedgehog
+
+After:
+
+    Artist: Loyft
+
+### Compilation Artist Normalization
+
+Before:
+
+    VARIOUS
+
+After:
+
+    Various Artists
+
+Repairs operate directly on FLAC metadata and support rollback.
+
+---
+
 ## JSON API
 
-Machine readable output:
+Machine-readable output is available for:
 
     dftr scan --json
     dftr doctor --json
@@ -58,39 +190,52 @@ Machine readable output:
     dftr quality --json
     dftr repair --json
 
-All JSON formats contain:
+All JSON outputs include a schema version:
 
-    schema_version
+    {
+      "schema_version": 1
+    }
 
-## Repair Rules
+allowing future schema evolution without breaking integrations.
 
-Current automatic repairs:
-
-- missing_artist
-- various_uppercase
-- various_mixed
+---
 
 ## Safety
 
-All repair operations:
+dontfeartheripper is designed around safe workflows.
 
-- default to dry-run
-- support rollback
-- are validated before execution
+- Dry-run by default
+- Explicit --yes required for modifications
+- Rename rollback support
+- Metadata repair rollback support
+- Collision detection
+- Container directory protection
 
-## Testing
+Nothing is modified unless explicitly requested.
 
-Run tests:
+---
+
+## Running Tests
 
     uv run pytest -v
 
-Current test coverage:
+Current test coverage includes:
 
-- repair_missing_artist
-- repair_various_albumartist
-- container_is_never_repaired
-- quality_score_improves
-- scan_prefers_high_quality_flac_data
+- metadata repair planning
+- repair safety checks
+- quality scoring
+- metadata source prioritization
+- repair rule validation
+
+---
+
+## Requirements
+
+- Python 3.14+
+- FLAC-based music collection
+- Metadata created by tools such as EAC, CUERipper, Whipper or similar
+
+---
 
 ## License
 
