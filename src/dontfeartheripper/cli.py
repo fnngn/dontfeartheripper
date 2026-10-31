@@ -4,7 +4,8 @@ from rich import print
 
 from dontfeartheripper.scanner import scan_library
 
-app = typer.Typer(help="dontfeartheripper v0.0.2-dev")
+app = typer.Typer(help="dontfeartheripper v0.0.3-dev")
+
 
 @app.command()
 def scan(path: str = typer.Argument(".")) -> None:
@@ -30,10 +31,8 @@ def scan(path: str = typer.Argument(".")) -> None:
 
         print(f"  source={item.metadata_source}")
 
-
         if item.container_directory:
             print("  container=yes")
-
 
         if item.cryptic:
             print("  cryptic=yes")
@@ -65,10 +64,21 @@ def doctor(path: str = typer.Argument(".")) -> None:
 
 
 @app.command()
-def fix(path: str = typer.Argument(".")) -> None:
+def fix(
+    path: str = typer.Argument("."),
+    yes: bool = typer.Option(
+        False,
+        "--yes",
+        help="Perform rename operations",
+    ),
+) -> None:
     items = scan_library(Path(path))
 
     renamed = 0
+    candidates = 0
+
+    if not yes:
+        print("[yellow]DRY RUN[/yellow]")
 
     for item in items:
         if not item.rename_candidate:
@@ -81,6 +91,8 @@ def fix(path: str = typer.Argument(".")) -> None:
             print(f" target: {item.suggested_name}")
             continue
 
+        candidates += 1
+
         target = item.path.parent / item.suggested_name
 
         if target.exists():
@@ -90,14 +102,26 @@ def fix(path: str = typer.Argument(".")) -> None:
             continue
 
         print()
-        print(f"RENAME {item.path.name}")
-        print(f"    -> {item.suggested_name}")
+        print(item.path.name)
+        print(f" -> {item.suggested_name}")
 
-        item.path.rename(target)
-        renamed += 1
+        if yes:
+            item.path.rename(target)
+            renamed += 1
 
     print()
-    print(f"Renamed: {renamed}")
+
+    if candidates == 0:
+        print("No rename candidates found.")
+        return
+
+    if yes:
+        print(f"Renamed: {renamed}")
+    else:
+        print(f"Candidates: {candidates}")
+        print("No changes were made.")
+        print("Run with --yes to perform the rename.")
+
 
 if __name__ == "__main__":
     app()

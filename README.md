@@ -10,6 +10,22 @@ If your library contains directories like
 
 instead of actual album names, this tool is for you.
 
+## Quick Start
+
+Inspect your library:
+
+    dftr doctor /music
+
+Preview rename operations:
+
+    dftr fix /music
+
+Execute rename operations:
+
+    dftr fix /music --yes
+
+By default, fix runs in dry-run mode and performs no changes.
+
 ## Features
 
 - Detect cryptic directory names
@@ -82,13 +98,17 @@ Diagnose:
 
     dftr doctor /path/to/music
 
-Rename:
+Rename preview:
 
     dftr fix /path/to/music
 
+Execute rename:
+
+    dftr fix /path/to/music --yes
+
 ## Project Status
 
-Version: 0.0.2
+Version: 0.0.3
 
 The project is already usable for real-world library cleanup but remains experimental.
 
