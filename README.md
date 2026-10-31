@@ -26,6 +26,42 @@ Execute rename operations:
 
 By default, fix runs in dry-run mode and performs no changes.
 
+## Quick Start
+
+Inspect the library and look for problems:
+
+    dftr doctor /music
+
+Preview all planned rename operations:
+
+    dftr fix /music
+
+Execute the rename operations:
+
+    dftr fix /music --yes
+
+Undo the most recent rename operation:
+
+    dftr undo
+
+Typical workflow:
+
+    dftr doctor /music
+    dftr fix /music
+    dftr fix /music --yes
+
+If necessary:
+
+    dftr undo
+
+The fix command runs in dry-run mode by default.
+
+No files or directories are modified unless --yes is specified.
+
+The undo command restores the most recent successful rename operation using:
+
+    .dftr-last-rename.json
+
 ## Features
 
 - Detect cryptic directory names

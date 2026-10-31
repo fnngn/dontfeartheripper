@@ -5,22 +5,16 @@ Highlights
 
 - Added rollback support
 - Added dftr undo command
-- Added rename history logging
-- Added safer rename workflow
-- Improved fix command output
-
-New Commands
-------------
-
-dftr undo
-
-The undo command reverts the most recent successful
-rename operation using the rollback file:
-
-    .dftr-last-rename.json
+- Added automatic rename history logging
+- Added clearer dry-run output
+- Added rename candidate counting
 
 Workflow
 --------
+
+Inspect:
+
+    dftr doctor /music
 
 Preview:
 
@@ -30,9 +24,14 @@ Execute:
 
     dftr fix /music --yes
 
-Undo:
+Rollback:
 
     dftr undo
+
+Notes
+-----
+
+The undo command restores all renames from the most recent successful fix run.
 
 License
 -------
