@@ -109,7 +109,11 @@ def scan_library(root: Path) -> list:
                     and f"CD {disc_number}" in album_upper
                 )
 
-                if disc_number and not has_disc_in_name:
+                if (
+                    disc_number
+                    and disc_number > 1
+                    and not has_disc_in_name
+                ):
                     suggested_name = sanitize_filename(
                         f"{artist_name} - {album_name} - CD {disc_number}"
                     )
@@ -145,10 +149,16 @@ def scan_library(root: Path) -> list:
         if not item.rename_candidate:
             continue
 
-        if item.suggested_name in seen:
+        collision_key = (
+            item.category,
+            item.path.parent,
+            item.suggested_name,
+        )
+
+        if collision_key in seen:
             item.rename_collision = True
-            seen[item.suggested_name].rename_collision = True
+            seen[collision_key].rename_collision = True
         else:
-            seen[item.suggested_name] = item
+            seen[collision_key] = item
 
     return items
