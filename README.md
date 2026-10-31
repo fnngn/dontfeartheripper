@@ -10,19 +10,6 @@ If your library contains directories like
 
 instead of actual album names, this tool is for you.
 
-## What it does
-
-dontfeartheripper scans a music library and tries to recover meaningful album names from multiple metadata sources.
-
-Supported sources:
-
-- TOC files
-- FLAC tags
-- album.nfo files
-- GNUdb lookups (experimental)
-
-The tool can then generate safe rename suggestions and optionally rename cryptic album directories.
-
 ## Features
 
 - Detect cryptic directory names
@@ -30,14 +17,12 @@ The tool can then generate safe rename suggestions and optionally rename cryptic
 - Recover metadata from FLAC tags
 - Read album.nfo files
 - Detect multi-disc releases
-- Detect discography/container directories
 - Generate rename suggestions
 - Detect rename collisions
-- Perform automatic folder renames
+- Detect container/discography directories
+- Rename cryptic album folders
 
-## Metadata Priority
-
-Metadata quality varies wildly depending on the source.
+## Metadata Sources
 
 Priority order:
 
@@ -83,29 +68,29 @@ Requirements:
 - Python 3.14+
 - uv
 
-Install dependencies:
+Install:
 
-    uv sync
+    ./install.sh
 
 ## Commands
 
 Scan:
 
-    uv run dftr scan /path/to/music
+    dftr scan /path/to/music
 
 Diagnose:
 
-    uv run dftr doctor /path/to/music
+    dftr doctor /path/to/music
 
 Rename:
 
-    uv run dftr fix /path/to/music
+    dftr fix /path/to/music
 
 ## Project Status
 
-Version: 0.0.1
+Version: 0.0.2
 
-The project is already usable for real-world library cleanup but remains highly experimental.
+The project is already usable for real-world library cleanup but remains experimental.
 
 Always keep backups before performing large renames.
 

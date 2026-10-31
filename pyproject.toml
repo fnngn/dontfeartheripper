@@ -1,6 +1,6 @@
 [project]
 name = "dontfeartheripper"
-version = "0.0.1"
+version = "0.0.2"
 description = "Music library cleanup and rename tool for FLAC collections"
 readme = "README.md"
 authors = [

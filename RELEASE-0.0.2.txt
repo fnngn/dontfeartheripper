@@ -1,0 +1,26 @@
+dontfeartheripper 0.0.2
+
+Highlights
+----------
+
+- Added real rename mode
+- Added album.nfo disc detection
+- Added multi-disc rename handling
+- CD 1 no longer receives a suffix
+- Existing disc suffixes are preserved
+- Collision detection scoped to destination directory
+- Improved handling of compilation archives
+- Improved handling of discography containers
+
+Bug Fixes
+---------
+
+- Fixed duplicated disc suffixes
+- Fixed TOC metadata source handling
+- Fixed FLAC fallback logic
+- Fixed false positive rename collisions
+
+License
+-------
+
+GPL-3.0
