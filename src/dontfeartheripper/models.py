@@ -16,3 +16,5 @@ class LibraryItem:
     container_directory: bool = False
     rename_candidate: bool = False
     suggested_name: str | None = None
+    disc_number: int | None = None
+    rename_collision: bool = False
