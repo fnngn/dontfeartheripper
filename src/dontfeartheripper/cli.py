@@ -181,5 +181,75 @@ def undo() -> None:
     print(f"Reverted: {reverted}")
 
 
+@app.command()
+def stats(path: str = typer.Argument(".")) -> None:
+    items = scan_library(Path(path))
+
+    albums = sum(
+        1 for item in items
+        if item.category == "album"
+    )
+
+    compilations = sum(
+        1 for item in items
+        if item.category == "compilation"
+    )
+
+    soundtracks = sum(
+        1 for item in items
+        if item.category == "soundtrack"
+    )
+
+    containers = sum(
+        1 for item in items
+        if item.container_directory
+    )
+
+    cryptic = sum(
+        1 for item in items
+        if item.cryptic
+    )
+
+    toc = sum(
+        1 for item in items
+        if item.has_toc
+    )
+
+    cue = sum(
+        1 for item in items
+        if item.has_cue
+    )
+
+    candidates = sum(
+        1 for item in items
+        if item.rename_candidate
+    )
+
+    collisions = sum(
+        1 for item in items
+        if item.rename_collision
+    )
+
+    print()
+    print("[cyan]Library Statistics[/cyan]")
+    print()
+
+    print(f"Albums:             {albums}")
+    print(f"Compilations:       {compilations}")
+    print(f"Soundtracks:        {soundtracks}")
+    print()
+
+    print(f"Containers:         {containers}")
+    print(f"Cryptic:            {cryptic}")
+    print()
+
+    print(f"TOC files:          {toc}")
+    print(f"CUE files:          {cue}")
+    print()
+
+    print(f"Rename candidates: {candidates}")
+    print(f"Collisions:         {collisions}")
+
+
 if __name__ == "__main__":
     app()

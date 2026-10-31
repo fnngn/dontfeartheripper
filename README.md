@@ -16,27 +16,15 @@ Inspect your library:
 
     dftr doctor /music
 
+Generate statistics:
+
+    dftr stats /music
+
 Preview rename operations:
 
     dftr fix /music
 
 Execute rename operations:
-
-    dftr fix /music --yes
-
-By default, fix runs in dry-run mode and performs no changes.
-
-## Quick Start
-
-Inspect the library and look for problems:
-
-    dftr doctor /music
-
-Preview all planned rename operations:
-
-    dftr fix /music
-
-Execute the rename operations:
 
     dftr fix /music --yes
 
@@ -47,6 +35,7 @@ Undo the most recent rename operation:
 Typical workflow:
 
     dftr doctor /music
+    dftr stats /music
     dftr fix /music
     dftr fix /music --yes
 
@@ -69,10 +58,57 @@ The undo command restores the most recent successful rename operation using:
 - Recover metadata from FLAC tags
 - Read album.nfo files
 - Detect multi-disc releases
+- Detect container/discography directories
 - Generate rename suggestions
 - Detect rename collisions
-- Detect container/discography directories
-- Rename cryptic album folders
+- Perform automatic folder renames
+- Undo the most recent rename operation
+- Generate library statistics
+
+## Commands
+
+Scan metadata:
+
+    dftr scan /path/to/music
+
+Diagnose problems:
+
+    dftr doctor /path/to/music
+
+Show statistics:
+
+    dftr stats /path/to/music
+
+Preview rename operations:
+
+    dftr fix /path/to/music
+
+Execute rename operations:
+
+    dftr fix /path/to/music --yes
+
+Rollback previous rename:
+
+    dftr undo
+
+## Statistics
+
+Example:
+
+    Library Statistics
+
+    Albums:             12345
+    Compilations:         789
+    Soundtracks:          123
+
+    Containers:            54
+    Cryptic:                0
+
+    TOC files:          11000
+    CUE files:          10998
+
+    Rename candidates:     0
+    Collisions:            0
 
 ## Metadata Sources
 
@@ -81,8 +117,6 @@ Priority order:
 1. TOC
 2. FLAC tags
 3. album.nfo
-
-Low quality metadata is automatically replaced by better information if available.
 
 ## Multi-Disc Releases
 
@@ -96,59 +130,6 @@ Additional discs receive a suffix:
     Artist - Album - CD 3
 
 Existing disc suffixes are preserved and never duplicated.
-
-## Example
-
-Before:
-
-    compilation/
-      VREKYT~E
-      VSHYFY~X
-      VKTVPF~G
-
-After:
-
-    compilation/
-      Various Artists - Blues Giants - The Essential Songbook
-      Various Artists - Blues Giants - The Essential Songbook - CD 2
-      Various Artists - Blues Giants - The Essential Songbook - CD 3
-
-## Installation
-
-Requirements:
-
-- Python 3.14+
-- uv
-
-Install:
-
-    ./install.sh
-
-## Commands
-
-Scan:
-
-    dftr scan /path/to/music
-
-Diagnose:
-
-    dftr doctor /path/to/music
-
-Rename preview:
-
-    dftr fix /path/to/music
-
-Execute rename:
-
-    dftr fix /path/to/music --yes
-
-## Project Status
-
-Version: 0.0.3
-
-The project is already usable for real-world library cleanup but remains experimental.
-
-Always keep backups before performing large renames.
 
 ## License
 
