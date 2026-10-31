@@ -38,6 +38,10 @@ def scan_library(root: Path) -> list:
             if flacs and (album_name is None or artist_name is None):
                 tags = read_flac_tags(flacs[0])
 
+                if tags["albumartist"]:
+                    artist_name = tags["albumartist"]
+
+
                 if album_name is None:
                     album_name = tags["album"]
 
