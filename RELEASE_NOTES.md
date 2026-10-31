@@ -1,156 +1,108 @@
 # dontfeartheripper v0.1.2
 
-The first release that feels production-ready.
-
-This release introduces complete cover art management, MusicBrainz integration, automatic artwork retrieval and download planning while preserving the project's dry-run-first philosophy.
-
----
-
 ## Highlights
 
-### Cover Art Management
+Recursive album discovery is now supported across the entire library.
 
-Find missing artwork:
+Albums are no longer limited to the first directory level below:
 
-    dftr cover /music
+- album
+- compilation
+- soundtrack
 
-Lookup candidates:
-
-    dftr cover /music --fetch
-
-Preview downloads:
-
-    dftr cover /music --plan
-
-Download artwork:
-
-    dftr cover /music --yes
+This significantly improves support for nested collections, soundtrack archives and artist containers.
 
 ---
 
 ## New Features
 
-### Missing Cover Detection
+### Recursive Album Discovery
 
-Detect missing artwork for:
-
-- albums
-- compilations
-- soundtracks
-
-Recursive artwork detection is supported.
-
-Recognized filenames:
-
-    cover.*
-    folder.*
-    front.*
-    artwork.*
-    albumart.*
-
-Supported formats:
-
-    jpg
-    jpeg
-    png
-
----
-
-### MusicBrainz Integration
-
-Automatic release matching through MusicBrainz.
-
----
-
-### Cover Art Archive Integration
-
-Automatic artwork retrieval through Cover Art Archive.
-
----
-
-### Download Planning
-
-Generate a complete cover download plan before writing files.
+Album directories are now discovered recursively.
 
 Example:
 
-    dftr cover /music --plan
+    album/
+    └── Truckfighters/
+        ├── Gravity X
+        ├── Mania
+        ├── Phi
+        └── Fuzzsplit of the Century
+
+All albums are detected automatically.
 
 ---
 
-### Cover Downloads
+### Expanded Audio Format Detection
 
-Download artwork directly into album directories.
+Recursive detection now supports:
 
-Example:
-
-    dftr cover /music --yes
-
-Progress reporting:
-
-    [1/7] Album -> OK
-
-Summary:
-
-    Downloaded: 7
-    Failed: 0
+- FLAC
+- MP3
+- M4A
+- AAC
+- OGG
+- OPUS
+- WAV
+- APE
+- WV
 
 ---
 
-### Jellyfin Compatibility
+### Improved Cover Discovery
 
-Downloaded artwork is normalized to:
+Recursive scanning automatically expands cover detection and downloading.
 
-    cover.jpg
+Additional cover artwork successfully discovered:
 
-Compatible with:
-
-- Jellyfin
-- Plex
-- Kodi
-- Navidrome
-
----
-
-## Performance
-
-MusicBrainz lookup strategy redesigned.
-
-Development library:
-
-    ~48s
-    ->
-    ~12s
-
-while maintaining identical cover discovery results.
+- Gravity X
+- Mania
+- Phi
+- Fuzzsplit of the Century
+- Frostpunk Original Soundtrack
 
 ---
 
 ## Existing Features
 
-- Library scanning
-- Diagnostics
-- Statistics
-- Quality analysis
-- Metadata repair
-- Directory renaming
-- Rollback support
-- JSON output
+### Library Analysis
+
+    dftr scan
+
+### Diagnostics
+
+    dftr doctor
+
+### Statistics
+
+    dftr stats
+
+### Quality Analysis
+
+    dftr quality
+
+### Metadata Repair
+
+    dftr repair
+    dftr repair --yes
+    dftr repair-undo
+
+### Directory Renaming
+
+    dftr fix
+    dftr fix --yes
+    dftr undo
+
+### Cover Art Management
+
+    dftr cover
+    dftr cover --fetch
+    dftr cover --plan
+    dftr cover --yes
 
 ---
 
 ## Test Status
 
-    15 passed
+    19 passed
     0 failed
-
----
-
-## Remaining Manual Cases
-
-The following albums still require manual investigation:
-
-- NoM (Nuisance of Majority) - Brains, Monkeys and the New World Order
-- The Outer Worlds 2 Soundtrack
-
-No suitable MusicBrainz cover match was found.

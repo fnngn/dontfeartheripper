@@ -8,7 +8,12 @@ from rich import print
 from dontfeartheripper.scanner import scan_library
 from dontfeartheripper.stats import build_stats
 from dontfeartheripper.quality import analyze_quality
-from dontfeartheripper.cover import analyze_covers, preview_fetch, build_download_plan, execute_download_plan
+from dontfeartheripper.cover import (
+    analyze_covers,
+    preview_fetch,
+    build_download_plan,
+    execute_download_plan,
+)
 from dontfeartheripper.repair import (
     analyze_repairs,
     apply_repairs,
@@ -17,7 +22,7 @@ from dontfeartheripper.repair import (
 
 UNDO_FILE = Path(".dftr-last-rename.json")
 
-app = typer.Typer(help="dontfeartheripper v0.1.2-dev")
+app = typer.Typer(help="dontfeartheripper v0.1.2")
 
 
 @app.command()
@@ -29,81 +34,7 @@ def scan(
         help="Output scan as JSON",
     ),
 ) -> None:
-
     items = scan_library(Path(path))
-
-
-    if yes:
-
-        report = execute_download_plan(items)
-
-        if json_output:
-
-            builtins.print(
-                json.dumps(
-                    report,
-                    indent=2,
-                )
-            )
-
-            return
-
-        ok = sum(
-            1
-            for item in report["downloads"]
-            if item["success"]
-        )
-
-        failed = sum(
-            1
-            for item in report["downloads"]
-            if not item["success"]
-        )
-
-        print()
-        print(f"Downloaded: {ok}")
-        print(f"Failed: {failed}")
-
-        return
-
-    if plan:
-
-        report = build_download_plan(items)
-
-        if json_output:
-            builtins.print(
-                json.dumps(
-                    report,
-                    indent=2,
-                )
-            )
-            return
-
-        downloads = report["downloads"]
-
-        print()
-        print("[yellow]DOWNLOAD PLAN[/yellow]")
-
-        for item in downloads:
-
-            print()
-            print(item["path"])
-
-            print(
-                f"  action: {item['action']}"
-            )
-
-            print(
-                f"  target: {item['target_file']}"
-            )
-
-        print()
-        print(
-            f"Planned downloads: {len(downloads)}"
-        )
-
-        return
-
 
     if json_output:
         report = {
@@ -173,47 +104,7 @@ def doctor(
         help="Output report as JSON",
     ),
 ) -> None:
-
     items = scan_library(Path(path))
-
-    if plan:
-
-        report = build_download_plan(items)
-
-        if json_output:
-            builtins.print(
-                json.dumps(
-                    report,
-                    indent=2,
-                )
-            )
-            return
-
-        downloads = report["downloads"]
-
-        print()
-        print("[yellow]DOWNLOAD PLAN[/yellow]")
-
-        for item in downloads:
-
-            print()
-            print(item["path"])
-
-            print(
-                f"  action: {item['action']}"
-            )
-
-            print(
-                f"  target: {item['target_file']}"
-            )
-
-        print()
-        print(
-            f"Planned downloads: {len(downloads)}"
-        )
-
-        return
-
 
     if json_output:
         report = {
@@ -272,47 +163,7 @@ def fix(
         help="Perform rename operations",
     ),
 ) -> None:
-
     items = scan_library(Path(path))
-
-    if plan:
-
-        report = build_download_plan(items)
-
-        if json_output:
-            builtins.print(
-                json.dumps(
-                    report,
-                    indent=2,
-                )
-            )
-            return
-
-        downloads = report["downloads"]
-
-        print()
-        print("[yellow]DOWNLOAD PLAN[/yellow]")
-
-        for item in downloads:
-
-            print()
-            print(item["path"])
-
-            print(
-                f"  action: {item['action']}"
-            )
-
-            print(
-                f"  target: {item['target_file']}"
-            )
-
-        print()
-        print(
-            f"Planned downloads: {len(downloads)}"
-        )
-
-        return
-
 
     renamed = 0
     candidates = 0
@@ -426,47 +277,7 @@ def stats(
         help="Output statistics as JSON",
     ),
 ) -> None:
-
     items = scan_library(Path(path))
-
-    if plan:
-
-        report = build_download_plan(items)
-
-        if json_output:
-            builtins.print(
-                json.dumps(
-                    report,
-                    indent=2,
-                )
-            )
-            return
-
-        downloads = report["downloads"]
-
-        print()
-        print("[yellow]DOWNLOAD PLAN[/yellow]")
-
-        for item in downloads:
-
-            print()
-            print(item["path"])
-
-            print(
-                f"  action: {item['action']}"
-            )
-
-            print(
-                f"  target: {item['target_file']}"
-            )
-
-        print()
-        print(
-            f"Planned downloads: {len(downloads)}"
-        )
-
-        return
-
     stats = build_stats(items)
 
     if json_output:
@@ -503,47 +314,7 @@ def quality(
         help="Output quality report as JSON",
     ),
 ) -> None:
-
     items = scan_library(Path(path))
-
-    if plan:
-
-        report = build_download_plan(items)
-
-        if json_output:
-            builtins.print(
-                json.dumps(
-                    report,
-                    indent=2,
-                )
-            )
-            return
-
-        downloads = report["downloads"]
-
-        print()
-        print("[yellow]DOWNLOAD PLAN[/yellow]")
-
-        for item in downloads:
-
-            print()
-            print(item["path"])
-
-            print(
-                f"  action: {item['action']}"
-            )
-
-            print(
-                f"  target: {item['target_file']}"
-            )
-
-        print()
-        print(
-            f"Planned downloads: {len(downloads)}"
-        )
-
-        return
-
     report = analyze_quality(items)
 
     if json_output:
@@ -586,47 +357,7 @@ def repair(
         help="Apply repairs",
     ),
 ) -> None:
-
     items = scan_library(Path(path))
-
-    if plan:
-
-        report = build_download_plan(items)
-
-        if json_output:
-            builtins.print(
-                json.dumps(
-                    report,
-                    indent=2,
-                )
-            )
-            return
-
-        downloads = report["downloads"]
-
-        print()
-        print("[yellow]DOWNLOAD PLAN[/yellow]")
-
-        for item in downloads:
-
-            print()
-            print(item["path"])
-
-            print(
-                f"  action: {item['action']}"
-            )
-
-            print(
-                f"  target: {item['target_file']}"
-            )
-
-        print()
-        print(
-            f"Planned downloads: {len(downloads)}"
-        )
-
-        return
-
     report = analyze_repairs(items)
 
     if json_output:
@@ -856,7 +587,6 @@ def cover(
 
     print()
     print(f"Missing covers: {len(covers)}")
-
 
 if __name__ == "__main__":
     app()

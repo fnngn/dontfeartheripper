@@ -148,5 +148,131 @@
     "cover_found": true,
     "cover_url": "http://coverartarchive.org/release/fd14a98b-9ec2-486e-8b31-422c28b5d829/27608667073.jpg",
     "target_file": "/mnt/nas/media/Musik/album/The Alan Parsons Project - Gaudi/cover.jpg"
+  },
+  "Pantera|Vulgar Display of Power": {
+    "path": "/mnt/nas/media/Musik/album/Pantera - Vulgar Display of Power",
+    "artist": "Pantera",
+    "album": "Vulgar Display of Power",
+    "found": true,
+    "release": {
+      "id": "d8405b72-2c66-41d4-b128-c8bd671f067d",
+      "title": "Vulgar Display of Power",
+      "release_count": 10,
+      "selected_has_cover": false,
+      "cover_url": null
+    },
+    "release_count": 10,
+    "selected_has_cover": false,
+    "cover_found": false,
+    "cover_url": null,
+    "target_file": "/mnt/nas/media/Musik/album/Pantera - Vulgar Display of Power/cover.jpg"
+  },
+  "The Alan Parsons Project|Eve": {
+    "path": "/mnt/nas/media/Musik/album/The Alan Parsons Project - Eve",
+    "artist": "The Alan Parsons Project",
+    "album": "Eve",
+    "found": true,
+    "release": {
+      "id": "93b53396-90c0-43ba-a14d-f2b9bdbc6390",
+      "title": "Eve",
+      "release_count": 10,
+      "selected_has_cover": false,
+      "cover_url": null
+    },
+    "release_count": 10,
+    "selected_has_cover": false,
+    "cover_found": false,
+    "cover_url": null,
+    "target_file": "/mnt/nas/media/Musik/album/The Alan Parsons Project - Eve/cover.jpg"
+  },
+  "Truckfighters|Gravity X": {
+    "path": "/mnt/nas/media/Musik/album/Truckfighters/Gravity X",
+    "artist": "Truckfighters",
+    "album": "Gravity X",
+    "found": true,
+    "release": {
+      "id": "ae61eba4-d14c-4f12-8130-85c85efac5cd",
+      "title": "Gravity X",
+      "release_count": 10,
+      "selected_has_cover": true,
+      "cover_url": "http://coverartarchive.org/release/ae61eba4-d14c-4f12-8130-85c85efac5cd/9778918725.jpg"
+    },
+    "release_count": 10,
+    "selected_has_cover": true,
+    "cover_found": true,
+    "cover_url": "http://coverartarchive.org/release/ae61eba4-d14c-4f12-8130-85c85efac5cd/9778918725.jpg",
+    "target_file": "/mnt/nas/media/Musik/album/Truckfighters/Gravity X/cover.jpg"
+  },
+  "Truckfighters|Phi": {
+    "path": "/mnt/nas/media/Musik/album/Truckfighters/Phi",
+    "artist": "Truckfighters",
+    "album": "Phi",
+    "found": true,
+    "release": {
+      "id": "168be627-7f0c-4d47-bc23-0871568cbd65",
+      "title": "Phi",
+      "release_count": 10,
+      "selected_has_cover": true,
+      "cover_url": "http://coverartarchive.org/release/168be627-7f0c-4d47-bc23-0871568cbd65/28061971498.jpg"
+    },
+    "release_count": 10,
+    "selected_has_cover": true,
+    "cover_found": true,
+    "cover_url": "http://coverartarchive.org/release/168be627-7f0c-4d47-bc23-0871568cbd65/28061971498.jpg",
+    "target_file": "/mnt/nas/media/Musik/album/Truckfighters/Phi/cover.jpg"
+  },
+  "Truckfighters|Mania": {
+    "path": "/mnt/nas/media/Musik/album/Truckfighters/Mania",
+    "artist": "Truckfighters",
+    "album": "Mania",
+    "found": true,
+    "release": {
+      "id": "1b56b8b4-3625-4941-83ee-467ebc0ec5c8",
+      "title": "Mania",
+      "release_count": 10,
+      "selected_has_cover": true,
+      "cover_url": "http://coverartarchive.org/release/1b56b8b4-3625-4941-83ee-467ebc0ec5c8/28063023348.png"
+    },
+    "release_count": 10,
+    "selected_has_cover": true,
+    "cover_found": true,
+    "cover_url": "http://coverartarchive.org/release/1b56b8b4-3625-4941-83ee-467ebc0ec5c8/28063023348.png",
+    "target_file": "/mnt/nas/media/Musik/album/Truckfighters/Mania/cover.jpg"
+  },
+  "Truckfighters vs. Firestone|Fuzzsplit of the Century": {
+    "path": "/mnt/nas/media/Musik/album/Truckfighters/Fuzzsplit of the Century",
+    "artist": "Truckfighters vs. Firestone",
+    "album": "Fuzzsplit of the Century",
+    "found": true,
+    "release": {
+      "id": "afae75f1-8e99-4707-ad45-eb37c093cdb8",
+      "title": "Fuzzsplit of the Century",
+      "release_count": 2,
+      "selected_has_cover": true,
+      "cover_url": "http://coverartarchive.org/release/afae75f1-8e99-4707-ad45-eb37c093cdb8/6926541819.jpg"
+    },
+    "release_count": 2,
+    "selected_has_cover": true,
+    "cover_found": true,
+    "cover_url": "http://coverartarchive.org/release/afae75f1-8e99-4707-ad45-eb37c093cdb8/6926541819.jpg",
+    "target_file": "/mnt/nas/media/Musik/album/Truckfighters/Fuzzsplit of the Century/cover.jpg"
+  },
+  "Piotr Musia\u0142|Frostpunk (Original Soundtrack)": {
+    "path": "/mnt/nas/media/Musik/soundtrack/Frostpunk Original Soundtrack/Frostpunk Original Soundtrack-HQ/FLAC",
+    "artist": "Piotr Musia\u0142",
+    "album": "Frostpunk (Original Soundtrack)",
+    "found": true,
+    "release": {
+      "id": "56d349ec-a8c4-48df-be9e-1710ac2ea195",
+      "title": "Frostpunk (Original Soundtrack)",
+      "release_count": 10,
+      "selected_has_cover": true,
+      "cover_url": "https://coverartarchive.org/release/56d349ec-a8c4-48df-be9e-1710ac2ea195/39975640850.jpg"
+    },
+    "release_count": 10,
+    "selected_has_cover": true,
+    "cover_found": true,
+    "cover_url": "https://coverartarchive.org/release/56d349ec-a8c4-48df-be9e-1710ac2ea195/39975640850.jpg",
+    "target_file": "/mnt/nas/media/Musik/soundtrack/Frostpunk Original Soundtrack/Frostpunk Original Soundtrack-HQ/FLAC/cover.jpg"
   }
 }

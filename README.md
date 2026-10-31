@@ -203,6 +203,25 @@ Rollback:
 
 ---
 
+
+## Recursive Album Discovery
+
+dontfeartheripper now scans album directories recursively.
+
+Supported audio formats:
+
+- FLAC
+- MP3
+- M4A
+- AAC
+- OGG
+- OPUS
+- WAV
+- APE
+- WV
+
+Nested album structures, soundtrack collections and artist containers are automatically discovered.
+
 ## Typical Workflow
 
 Inspect the library:
@@ -298,7 +317,7 @@ Nothing is modified unless explicitly requested.
 
 Current status:
 
-    7 tests passing
+    19 tests passing
 
 ---
 
