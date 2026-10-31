@@ -16,6 +16,10 @@ Inspect your library:
 
     dftr doctor /music
 
+Generate machine readable diagnostics:
+
+    dftr doctor /music --json
+
 Generate statistics:
 
     dftr stats /music
@@ -36,17 +40,6 @@ Undo the most recent rename operation:
 
     dftr undo
 
-Typical workflow:
-
-    dftr doctor /music
-    dftr stats /music
-    dftr fix /music
-    dftr fix /music --yes
-
-If necessary:
-
-    dftr undo
-
 ## Features
 
 - Detect cryptic directory names
@@ -61,57 +54,30 @@ If necessary:
 - Undo previous rename operations
 - Generate library statistics
 - Export statistics as JSON
+- Export diagnostics as JSON
 
 ## Commands
 
-Scan metadata:
-
-    dftr scan /path/to/music
-
-Diagnose problems:
-
-    dftr doctor /path/to/music
-
-Human readable statistics:
-
-    dftr stats /path/to/music
-
-JSON statistics:
-
-    dftr stats /path/to/music --json
-
-Preview rename operations:
-
-    dftr fix /path/to/music
-
-Execute rename operations:
-
-    dftr fix /path/to/music --yes
-
-Rollback previous rename:
-
+    dftr scan
+    dftr doctor
+    dftr doctor --json
+    dftr stats
+    dftr stats --json
+    dftr fix
+    dftr fix --yes
     dftr undo
 
-## JSON Schema
+## JSON Output
 
-Version 1:
+Statistics:
 
-{
-  "schema_version": 1,
-  "albums": 0,
-  "compilations": 0,
-  "soundtracks": 0,
-  "containers": 0,
-  "cryptic": 0,
-  "toc_files": 0,
-  "cue_files": 0,
-  "rename_candidates": 0,
-  "collisions": 0
-}
+    dftr stats /music --json
 
-Example:
+Diagnostics:
 
-    dftr stats /music --json | jq .
+    dftr doctor /music --json
+
+Both JSON formats contain a schema_version field to support future extensions without breaking compatibility.
 
 ## License
 

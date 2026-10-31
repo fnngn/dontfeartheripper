@@ -46,8 +46,44 @@ def scan(path: str = typer.Argument(".")) -> None:
 
 
 @app.command()
-def doctor(path: str = typer.Argument(".")) -> None:
+def doctor(
+    path: str = typer.Argument("."),
+    json_output: bool = typer.Option(
+        False,
+        "--json",
+        help="Output report as JSON",
+    ),
+) -> None:
     items = scan_library(Path(path))
+
+    if json_output:
+        report = {
+            "schema_version": 1,
+            "warnings": [],
+            "info": [],
+        }
+
+        for item in items:
+            if item.container_directory:
+                report["info"].append(
+                    {
+                        "path": str(item.path),
+                        "type": "container_directory",
+                    }
+                )
+
+            if item.cryptic:
+                report["warnings"].append(
+                    {
+                        "path": str(item.path),
+                        "type": "cryptic_directory",
+                        "suggested_name": item.suggested_name,
+                        "collision": item.rename_collision,
+                    }
+                )
+
+        print(json.dumps(report, indent=2))
+        return
 
     for item in items:
         if item.container_directory:
