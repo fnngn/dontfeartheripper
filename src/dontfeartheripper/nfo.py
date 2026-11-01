@@ -1,5 +1,9 @@
+import logging
 from pathlib import Path
 import xml.etree.ElementTree as ET
+
+
+logger = logging.getLogger(__name__)
 
 
 def parse_album_nfo(path: Path) -> dict:
@@ -78,8 +82,8 @@ def parse_album_nfo(path: Path) -> dict:
             "disc": disc,
         }
 
-    except Exception:
-
+    except (ET.ParseError, OSError, UnicodeError) as exc:
+        logger.warning("Could not parse album NFO %s: %s", path, exc)
         return {
             "title": None,
             "album": None,

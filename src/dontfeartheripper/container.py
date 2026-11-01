@@ -1,4 +1,5 @@
 import json
+import xml.etree.ElementTree as ET
 
 from pathlib import Path
 
@@ -507,10 +508,12 @@ def write_container_poster(
     if source is None:
         return None
 
-    target = (
-        container["path"]
-        / "poster.jpg"
+    extension = (
+        ".png"
+        if source.suffix.lower() == ".png"
+        else ".jpg"
     )
+    target = container["path"] / f"poster{extension}"
 
     shutil.copy2(
         source,
@@ -536,35 +539,25 @@ def build_collection_nfo(container):
         f"{metadata['album_count']}."
     )
 
-    return f"""<?xml version="1.0" encoding="UTF-8"?>
-<collection>
-    <title>{metadata["name"]}</title>
+    root = ET.Element("collection")
+    values = {
+        "title": metadata["name"],
+        "uniqueid": metadata["container_id"],
+        "overview": overview,
+        "type": metadata["container_type"],
+        "albumcount": str(metadata["album_count"]),
+        "depth": str(metadata["container_depth"]),
+        "dateadded": date.today().isoformat(),
+    }
 
-    <uniqueid>
-        {metadata["container_id"]}
-    </uniqueid>
+    for tag, value in values.items():
+        ET.SubElement(root, tag).text = value
 
-    <overview>
-        {overview}
-    </overview>
-
-    <type>
-        {metadata["container_type"]}
-    </type>
-
-    <albumcount>
-        {metadata["album_count"]}
-    </albumcount>
-
-    <depth>
-        {metadata["container_depth"]}
-    </depth>
-
-    <dateadded>
-        {date.today().isoformat()}
-    </dateadded>
-</collection>
-"""
+    return (
+        '<?xml version="1.0" encoding="UTF-8"?>\n'
+        + ET.tostring(root, encoding="unicode")
+        + "\n"
+    )
 
 
 def write_collection_nfo(

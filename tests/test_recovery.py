@@ -225,3 +225,9 @@ def test_nfo_album_recovery():
         candidate.album
         == "Cyberpunk 2077 Soundtrack"
     )
+
+
+def test_musicbrainz_query_removes_parenthetical_edition():
+    from dontfeartheripper.musicbrainz import normalize_query
+
+    assert normalize_query("Album (Deluxe Edition)") == "Album"

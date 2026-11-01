@@ -17,6 +17,7 @@ echo "Installation complete."
 echo
 echo "Available commands:"
 echo "  dftr scan <path>"
+echo "  dftr tui <path>"
 echo "  dftr doctor <path>"
 echo "  dftr fix <path>"
 echo

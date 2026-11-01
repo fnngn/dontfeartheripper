@@ -1,4 +1,5 @@
 import re
+import sys
 from concurrent.futures import ThreadPoolExecutor, as_completed
 
 from pathlib import Path
@@ -39,26 +40,20 @@ def find_existing_cover(directory):
     # root directory first
     #
 
-    candidates = list(
-        directory.iterdir()
-    )
+    candidates = sorted(directory.iterdir())
 
     #
     # Fallback:
     # search a few levels deep
     #
 
-    try:
-
-        candidates.extend(
+    candidates.extend(
+        sorted(
             p
             for p in directory.rglob("*")
             if p.parent != directory
         )
-
-    except Exception:
-
-        pass
+    )
 
     for path in candidates:
 
@@ -224,7 +219,15 @@ def preview_fetch(items):
         if key in cache:
 
             results.append(
-                cache[key]
+                {
+                    **cache[key],
+                    **cover,
+                    "target_file": str(
+                        cover_target(
+                            Path(cover["path"])
+                        )
+                    ),
+                }
             )
 
         else:
@@ -278,14 +281,12 @@ def preview_fetch(items):
                 print(
                     f"[{current}/{total}] "
                     f"{album} -> {status}",
+                    file=sys.stderr,
                     flush=True,
                 )
 
                 cache[key] = result
-                results.append(
-                    result
-                )
-
+                results.append(result)
         save_cover_cache(cache)
 
     return results
@@ -293,27 +294,29 @@ def preview_fetch(items):
 def build_download_plan(items):
 
     cache = load_cover_cache()
-
-    results = list(
-        cache.values()
-    )
-
+    candidates = analyze_covers(items)["missing_covers"]
     plan = []
+    seen = set()
 
-    for item in results:
+    for candidate in candidates:
+        key = cache_key(
+            candidate["artist"],
+            candidate["album"],
+        )
+        item = cache.get(key)
 
-        if not item["cover_found"]:
+        if not item or not item["cover_found"] or key in seen:
             continue
 
-        target = Path(
-            item["target_file"]
-        )
+        seen.add(key)
+
+        target = cover_target(Path(candidate["path"]))
 
         plan.append(
             {
-                "path": item["path"],
-                "artist": item["artist"],
-                "album": item["album"],
+                "path": candidate["path"],
+                "artist": candidate["artist"],
+                "album": candidate["album"],
                 "source_url": item["cover_url"],
                 "target_file": str(target),
                 "action": (
@@ -351,6 +354,17 @@ def execute_download_plan(items):
             item["target_file"]
         )
 
+        if target.exists():
+            results.append(
+                {
+                    **item,
+                    "success": True,
+                    "skipped": True,
+                    "error": None,
+                }
+            )
+            continue
+
         try:
 
             response = requests.get(
@@ -360,13 +374,13 @@ def execute_download_plan(items):
 
             response.raise_for_status()
 
-            target.write_bytes(
-                response.content
-            )
+            with target.open("xb") as cover_file:
+                cover_file.write(response.content)
 
             print(
                 f"[{index}/{total}] "
                 f"{item['album']} -> OK",
+                file=sys.stderr,
                 flush=True,
             )
 
@@ -374,6 +388,17 @@ def execute_download_plan(items):
                 {
                     **item,
                     "success": True,
+                    "skipped": False,
+                    "error": None,
+                }
+            )
+
+        except FileExistsError:
+            results.append(
+                {
+                    **item,
+                    "success": True,
+                    "skipped": True,
                     "error": None,
                 }
             )
@@ -383,6 +408,7 @@ def execute_download_plan(items):
             print(
                 f"[{index}/{total}] "
                 f"{item['album']} -> ERROR",
+                file=sys.stderr,
                 flush=True,
             )
 
@@ -390,6 +416,7 @@ def execute_download_plan(items):
                 {
                     **item,
                     "success": False,
+                    "skipped": False,
                     "error": str(exc),
                 }
             )

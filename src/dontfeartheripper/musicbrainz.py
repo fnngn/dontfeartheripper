@@ -22,7 +22,7 @@ def normalize_query(value):
     )
 
     value = re.sub(
-        r"\\([^)]*\\)",
+        r"\([^)]*\)",
         "",
         value,
     )

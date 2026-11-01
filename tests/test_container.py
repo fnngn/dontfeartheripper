@@ -1,4 +1,5 @@
 from pathlib import Path
+import xml.etree.ElementTree as ET
 import sys
 
 sys.path.insert(
@@ -674,6 +675,18 @@ def test_collection_nfo_extended_fields(
     )
 
 
+def test_collection_nfo_escapes_container_names(tmp_path):
+    name = "Rock & Roll <Collection>"
+    xml = build_collection_nfo(
+        {
+            "path": tmp_path / name,
+            "children": [],
+        }
+    )
+
+    assert ET.fromstring(xml).findtext("title") == name
+
+
 def test_container_poster_created(
     tmp_path,
 ):
@@ -796,6 +809,24 @@ def test_container_poster_created(
         root
         / "poster.jpg"
     ).exists()
+
+
+def test_container_poster_keeps_png_extension(tmp_path):
+    from dontfeartheripper.container import write_container_poster
+
+    root = tmp_path / "album" / "Artist"
+    album = root / "Album"
+    album.mkdir(parents=True)
+    (root / "Second Album").mkdir()
+    (album / "track.flac").touch()
+    (root / "Second Album" / "track.flac").touch()
+    (album / "cover.png").write_bytes(b"png")
+
+    container = detect_containers(tmp_path)[0]
+    target = write_container_poster(container)
+
+    assert target == root / "poster.png"
+    assert target.read_bytes() == b"png"
 
 
 from dontfeartheripper.container import (

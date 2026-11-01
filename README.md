@@ -105,6 +105,21 @@ JSON:
 
 ---
 
+### Terminal UI
+
+Start the keyboard-driven library dashboard:
+
+    dftr tui /music
+
+Choose a section in the main menu with the arrow keys (or `j`/`k`) and press
+Enter to open its options. Press Escape or Backspace to return to the main
+menu. Scroll long reports with Page Up/Page Down, refresh the scan with `r`,
+and quit with `q`. Changes to tags, directories, or container metadata require
+a separate confirmation. The restrained playlist-style interface uses your
+terminal's default colors and background.
+
+---
+
 ### Statistics
 
     dftr stats /music
@@ -190,6 +205,9 @@ Download artwork:
 
     dftr cover /music --yes
 
+`--yes` looks up missing covers before downloading and does not overwrite
+existing `cover.jpg` files.
+
 Sources:
 
 - MusicBrainz
@@ -225,6 +243,10 @@ Detect:
 Generate metadata:
 
     dftr container /music --yes
+
+The `container` command writes local DFTR metadata and artwork. `collection.nfo`
+is not sufficient to create a native Jellyfin collection; use the Jellyfin
+integration below to create collections on the server.
 
 Supported container types:
 
@@ -262,7 +284,7 @@ Generated:
 
     .dftr-container.json
     collection.nfo
-    poster.jpg
+    poster.jpg (or poster.png when the source art is PNG)
 
 Metadata includes:
 
@@ -302,17 +324,38 @@ Real-world examples:
 
 ---
 
-## Jellyfin Collection Foundation
+## Jellyfin Collections
 
-Generated metadata:
+The integration creates and synchronizes native Jellyfin collections through
+the Jellyfin API, adds the matching music albums, and uploads available album
+art as the collection poster when no poster exists yet (existing posters are
+preserved). It matches albums by their paths; use `--server-root` when the
+path on Jellyfin differs from the local path. Nested disc folders are matched
+to their Jellyfin album folder, so a multi-disc album is added only once.
 
-    collection.nfo
+Create an administrator API key in Jellyfin with collection-management
+permissions, then provide it through the environment (the key is never written
+to the library):
 
-Generated artwork:
+    export JELLYFIN_URL=http://jellyfin:8096
+    export JELLYFIN_API_KEY=your-api-key
 
-    poster.jpg
+Optional: set the path prefix as seen by Jellyfin, relative to the supplied
+local library root:
 
-Provides a foundation for Jellyfin collection handling.
+    export JELLYFIN_LIBRARY_ROOT=/music
+
+Preview the match plan (the default; no collections are changed):
+
+    dftr jellyfin-collections /mnt/music
+
+Create or synchronize native collections:
+
+    dftr jellyfin-collections /mnt/music --yes
+
+The TUI provides **Jellyfin collection plan** and **Publish Jellyfin
+collections** actions. The publishing action requires confirmation. Configure
+the same environment variables before launching `dftr tui /mnt/music`.
 
 ---
 
@@ -327,6 +370,7 @@ Available for:
     dftr repair --json
     dftr cover --fetch --json
     dftr cover --plan --json
+    dftr jellyfin-collections /music --json
 
 All outputs include:
 
@@ -355,9 +399,9 @@ Run:
 
     uv run pytest -v
 
-Current status:
+Current test suite:
 
-    54 tests passing
+    85 tests passing
 
 Quality example:
 

@@ -76,6 +76,39 @@ def test_wav_album_detected(tmp_path):
     assert len(items) == 1
 
 
+def test_scan_reads_metadata_from_supported_audio(
+    tmp_path,
+    monkeypatch,
+):
+    from dontfeartheripper.models import LibraryItem
+    from dontfeartheripper.scanner import scan_library
+    from dontfeartheripper.tags2 import TrackMetadata
+
+    album = tmp_path / "album" / "MP3 Album"
+    album.mkdir(parents=True)
+    (album / "track01.mp3").touch()
+    (album / "track02.mp3").touch()
+
+    monkeypatch.setattr(
+        "dontfeartheripper.scanner.read_tags",
+        lambda path: TrackMetadata(
+            artist="Example Artist",
+            albumartist="Example Artist",
+            album="Example Album",
+            source_format="mp3",
+        ),
+    )
+
+    items = scan_library(tmp_path)
+
+    assert len(items) == 1
+    assert isinstance(items[0], LibraryItem)
+    assert items[0].artist_name == "Example Artist"
+    assert items[0].album_name == "Example Album"
+    assert items[0].metadata_source == "mp3"
+    assert items[0].track_count == 2
+
+
 def test_container_children_discovered(tmp_path):
 
     root = (

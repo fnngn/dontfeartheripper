@@ -2,7 +2,7 @@ from pathlib import Path
 
 from .models import LibraryItem
 from .toc import parse_toc
-from .tags import read_flac_tags
+from .tags2 import read_tags
 from .utils import sanitize_filename
 from .nfo import parse_album_nfo
 
@@ -128,10 +128,17 @@ def scan_library(root: Path) -> list:
             cat_path
         ):
 
-            flacs = (
-                list(album.glob("*.flac"))
-                + list(album.glob("*.FLAC"))
+            audio_files = sorted(
+                path
+                for path in album.iterdir()
+                if path.is_file()
+                and path.suffix.lower() in AUDIO_EXTENSIONS
             )
+            flacs = [
+                path
+                for path in audio_files
+                if path.suffix.lower() == ".flac"
+            ]
             subdirs = [p for p in album.iterdir() if p.is_dir()]
 
             toc = list(album.glob("*.toc")) + list(album.glob("*.TOC"))
@@ -158,7 +165,7 @@ def scan_library(root: Path) -> list:
 
             album_name = None
             artist_name = None
-            track_count = 0
+            track_count = len(audio_files)
             metadata_source = "unknown"
 
             if nfo:
@@ -192,7 +199,7 @@ def scan_library(root: Path) -> list:
                 if album_name or artist_name:
                     metadata_source = "toc"
 
-            if flacs and (
+            if audio_files and (
                 album_name is None
                 or artist_name is None
                 or is_low_quality_metadata(
@@ -200,7 +207,7 @@ def scan_library(root: Path) -> list:
                     album_name,
                 )
             ):
-                tags = read_flac_tags(flacs[0])
+                tags = read_tags(audio_files[0])
 
                 low_quality = is_low_quality_metadata(
                     artist_name,
@@ -209,22 +216,25 @@ def scan_library(root: Path) -> list:
 
                 if low_quality:
                     artist_name = (
-                        tags["albumartist"]
-                        or tags["artist"]
+                        tags.albumartist
+                        or tags.artist
                     )
-                    album_name = tags["album"]
-                    metadata_source = "flac"
+                    album_name = tags.album
+                    metadata_source = tags.source_format
 
                 else:
-                    if tags["albumartist"]:
-                        artist_name = tags["albumartist"]
-                        metadata_source = "flac"
+                    if tags.albumartist:
+                        artist_name = tags.albumartist
+                        metadata_source = tags.source_format
 
                     if album_name is None:
-                        album_name = tags["album"]
+                        album_name = tags.album
 
                     if artist_name is None:
-                        artist_name = tags["artist"]
+                        artist_name = tags.artist
+
+                    if tags.source_format != "unknown":
+                        metadata_source = tags.source_format
 
             if cryptic and artist_name and album_name:
                 album_upper = album_name.upper()

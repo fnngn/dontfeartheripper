@@ -81,6 +81,15 @@ def test_container_is_never_repaired():
     assert report["repairs"] == []
 
 
+def test_find_flac_files_includes_uppercase_extension(tmp_path):
+    from dontfeartheripper.repair import find_flac_files
+
+    track = tmp_path / "track.FLAC"
+    track.touch()
+
+    assert find_flac_files(tmp_path) == [str(track)]
+
+
 def test_quality_score_improves():
     broken = [
         {

@@ -7,7 +7,7 @@ def analyze_quality(items):
 
     for item in items:
 
-        if item.artist_name == "":
+        if not (item.artist_name or "").strip():
             issues.append(
                 {
                     "path": str(item.path),
@@ -16,7 +16,7 @@ def analyze_quality(items):
                 }
             )
 
-        if item.album_name == "":
+        if not (item.album_name or "").strip():
             issues.append(
                 {
                     "path": str(item.path),

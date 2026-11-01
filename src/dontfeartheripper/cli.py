@@ -1,5 +1,6 @@
 import builtins
 import json
+import os
 import typer
 
 from pathlib import Path
@@ -25,10 +26,18 @@ from dontfeartheripper.container import (
     write_collection_nfo,
     write_container_poster,
 )
+from dontfeartheripper.organizer import (
+    UNDO_FILE,
+    apply_rename_plan,
+    build_rename_plan,
+    undo_renames,
+)
+from dontfeartheripper.jellyfin import (
+    JellyfinError,
+    generate_jellyfin_collections,
+)
 
-UNDO_FILE = Path(".dftr-last-rename.json")
-
-app = typer.Typer(help="dontfeartheripper v0.1.5")
+app = typer.Typer(help="dontfeartheripper v0.1.6")
 
 
 @app.command()
@@ -171,48 +180,26 @@ def fix(
 ) -> None:
     items = scan_library(Path(path))
 
-    renamed = 0
+    plan = build_rename_plan(items)
     candidates = 0
-    rollback = []
 
     if not yes:
         print("[yellow]DRY RUN[/yellow]")
 
-    for item in items:
-        if not item.rename_candidate:
-            continue
-
-        if item.rename_collision:
+    for entry in plan:
+        old_path = entry["from"]
+        target = entry["to"]
+        if entry["skip_reason"]:
             print()
-            print(f"SKIP {item.path.name}")
-            print(" collision detected")
-            print(f" target: {item.suggested_name}")
+            print(f"SKIP {old_path.name}")
+            print(f" {entry['skip_reason']}")
             continue
 
         candidates += 1
 
-        target = item.path.parent / item.suggested_name
-
-        if target.exists():
-            print()
-            print(f"SKIP {item.path.name}")
-            print(f" target already exists: {target.name}")
-            continue
-
         print()
-        print(item.path.name)
-        print(f" -> {item.suggested_name}")
-
-        if yes:
-            rollback.append(
-                {
-                    "from": str(item.path),
-                    "to": str(target),
-                }
-            )
-
-            item.path.rename(target)
-            renamed += 1
+        print(old_path.name)
+        print(f" -> {target.name}")
 
     print()
 
@@ -221,13 +208,11 @@ def fix(
         return
 
     if yes:
-        UNDO_FILE.write_text(
-            json.dumps(rollback, indent=2)
-        )
+        result = apply_rename_plan(plan)
 
-        print(f"Renamed: {renamed}")
+        print(f"Renamed: {result['renamed']}")
 
-        if renamed:
+        if result["renamed"]:
             print(f"Rollback file: {UNDO_FILE}")
     else:
         print(f"Candidates: {candidates}")
@@ -241,37 +226,20 @@ def undo() -> None:
         print("No rollback file found.")
         return
 
-    operations = json.loads(
-        UNDO_FILE.read_text()
-    )
+    result = undo_renames()
 
-    reverted = 0
-
-    for entry in reversed(operations):
-        old_path = Path(entry["from"])
-        new_path = Path(entry["to"])
-
-        if not new_path.exists():
-            print()
-            print(f"SKIP {new_path}")
-            print(" target missing")
-            continue
-
-        if old_path.exists():
-            print()
-            print(f"SKIP {old_path}")
-            print(" original path already exists")
-            continue
-
+    for old_path, reason in result["skipped"]:
         print()
-        print(f"UNDO {new_path.name}")
-        print(f"  -> {old_path.name}")
+        print(f"SKIP {old_path}")
+        print(f" {reason}")
 
-        new_path.rename(old_path)
-        reverted += 1
+    for operation in result["operations"]:
+        print()
+        print(f"UNDO {Path(operation['from']).name}")
+        print(f"  -> {Path(operation['to']).name}")
 
     print()
-    print(f"Reverted: {reverted}")
+    print(f"Reverted: {result['reverted']}")
 
 
 @app.command()
@@ -445,7 +413,7 @@ def cover(
     items = scan_library(Path(path))
 
     if yes:
-
+        preview_fetch(items)
         report = execute_download_plan(
             items
         )
@@ -464,7 +432,7 @@ def cover(
         ok = sum(
             1
             for item in report["downloads"]
-            if item["success"]
+            if item["success"] and not item["skipped"]
         )
 
         failed = sum(
@@ -473,8 +441,15 @@ def cover(
             if not item["success"]
         )
 
+        skipped = sum(
+            1
+            for item in report["downloads"]
+            if item["skipped"]
+        )
+
         print()
         print(f"Downloaded: {ok}")
+        print(f"Skipped: {skipped}")
         print(f"Failed: {failed}")
 
         return
@@ -700,6 +675,111 @@ def container(
         print(
             "Run with --yes to create metadata."
         )
+
+
+@app.command()
+def tui(
+    path: str = typer.Argument(
+        ".",
+        help="Music library root",
+    ),
+) -> None:
+    from dontfeartheripper.tui import run_tui
+
+    run_tui(Path(path))
+
+
+@app.command("jellyfin-collections")
+def jellyfin_collections(
+    path: str = typer.Argument(
+        ".",
+        help="Local music library root",
+    ),
+    url: str | None = typer.Option(
+        None,
+        "--url",
+        help="Jellyfin server URL (or set JELLYFIN_URL)",
+    ),
+    server_root: str | None = typer.Option(
+        None,
+        "--server-root",
+        help="Path to this library as seen by Jellyfin, if different",
+    ),
+    yes: bool = typer.Option(
+        False,
+        "--yes",
+        help="Create/update collections on the Jellyfin server",
+    ),
+    json_output: bool = typer.Option(
+        False,
+        "--json",
+        help="Output the collection plan as JSON",
+    ),
+) -> None:
+    library_root = Path(path).resolve()
+    jellyfin_url = url or os.environ.get("JELLYFIN_URL")
+    api_key = os.environ.get("JELLYFIN_API_KEY")
+
+    if not jellyfin_url:
+        raise typer.BadParameter(
+            "provide --url or set JELLYFIN_URL"
+        )
+    if not api_key:
+        raise typer.BadParameter(
+            "set JELLYFIN_API_KEY in the environment"
+        )
+    if not library_root.is_dir():
+        raise typer.BadParameter(
+            f"library root is not a directory: {library_root}"
+        )
+
+    try:
+        report = generate_jellyfin_collections(
+            detect_containers(library_root),
+            jellyfin_url,
+            api_key,
+            library_root,
+            server_root=(
+                server_root
+                or os.environ.get("JELLYFIN_LIBRARY_ROOT")
+            ),
+            apply=yes,
+        )
+    except JellyfinError as exc:
+        typer.echo(f"Jellyfin error: {exc}", err=True)
+        raise typer.Exit(1) from exc
+
+    if json_output:
+        builtins.print(json.dumps(report, indent=2))
+        return
+
+    for collection in report["collections"]:
+        state = (
+            "UPDATE"
+            if collection["collection_id"]
+            else "CREATE"
+        )
+        print(
+            f"[cyan]{state}[/cyan] {collection['name']}: "
+            f"{collection['matched_count']}/{collection['album_count']} albums"
+        )
+        for missing in collection["missing_paths"]:
+            print(f"  [yellow]NOT FOUND[/yellow] {missing}")
+
+    if yes:
+        for result in report["results"]:
+            print(
+                f"{result['status'].upper()} {result['name']}"
+                + (
+                    f": {result['reason']}"
+                    if result.get("reason")
+                    else ""
+                )
+            )
+    else:
+        print()
+        print("Preview only; no Jellyfin collections were changed.")
+        print("Run with --yes to create or synchronize collections.")
 
 
 if __name__ == "__main__":

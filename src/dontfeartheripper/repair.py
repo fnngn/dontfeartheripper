@@ -18,8 +18,9 @@ REPAIR_UNDO_FILE = Path(".dftr-last-repair.json")
 def find_flac_files(directory):
     return sorted(
         str(path)
-        for path in directory.glob("*.flac")
+        for path in directory.glob("*")
         if path.is_file()
+        and path.suffix.lower() == ".flac"
     )
 
 

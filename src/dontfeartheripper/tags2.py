@@ -1,5 +1,6 @@
 from dataclasses import dataclass
 
+from mutagen import MutagenError
 from mutagen.flac import FLAC
 from mutagen.easyid3 import EasyID3
 from mutagen.mp4 import MP4
@@ -185,20 +186,25 @@ def read_tags(path):
 
     backend = detect_backend(path)
 
-    if backend == "flac":
-        return read_flac(path)
+    try:
+        if backend == "flac":
+            return read_flac(path)
 
-    if backend == "mp3":
-        return read_mp3(path)
+        if backend == "mp3":
+            return read_mp3(path)
 
-    if backend == "mp4":
-        return read_mp4(path)
+        if backend == "mp4":
+            return read_mp4(path)
 
-    if backend == "ogg":
-        return read_ogg(path)
+        if backend == "ogg":
+            return read_ogg(path)
 
-    if backend == "opus":
-        return read_opus(path)
+        if backend == "opus":
+            return read_opus(path)
+    except (MutagenError, OSError, ValueError):
+        return TrackMetadata(
+            source_format=backend or "unknown"
+        )
 
     return TrackMetadata()
 
