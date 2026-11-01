@@ -2,24 +2,24 @@
 
 Music library auditing, repair, artwork management and container discovery for large self-hosted collections.
 
-dontfeartheripper is designed for music libraries that have grown over many years through:
+dontfeartheripper is designed for music collections that have grown over many years through:
 
 - Exact Audio Copy (EAC)
 - CUERipper
 - Whipper
 - Bandcamp downloads
 - soundtrack archives
-- discographies
+- artist discographies
 - multi-disc releases
 
-The goal is simple:
+The project focuses on four areas:
 
-- discover problems
-- repair metadata
-- standardize artwork
-- generate collection metadata
-- prepare libraries for Jellyfin
-- keep operations reversible
+- library analysis
+- metadata repair
+- artwork management
+- collection and container management
+
+All operations follow a dry-run-first workflow and are designed to be reversible whenever possible.
 
 ---
 
@@ -30,15 +30,11 @@ The goal is simple:
 - Python 3.14+
 - uv
 
-Install uv:
-
-    curl -LsSf https://astral.sh/uv/install.sh | sh
-
-Verify:
+Verify uv:
 
     uv --version
 
-### Install from Source
+### Install
 
 Clone the repository:
 
@@ -48,15 +44,15 @@ Enter the project directory:
 
     cd dontfeartheripper
 
-Install:
+Run the installer:
 
-    uv tool install . --force
+    ./install.sh
 
-Verify:
+Verify installation:
 
     dftr --help
 
-### Updating
+### Update
 
 Update repository:
 
@@ -64,11 +60,11 @@ Update repository:
 
 Reinstall:
 
-    uv tool install . --force
+    ./install.sh
 
-### Development
+### Development Environment
 
-Install development environment:
+Install dependencies:
 
     uv sync
 
@@ -80,7 +76,7 @@ Run tests:
 
 ## Supported Audio Formats
 
-Recursive album discovery supports:
+Recursive album detection supports:
 
 - FLAC
 - MP3
@@ -92,13 +88,13 @@ Recursive album discovery supports:
 - APE
 - WV
 
+Album discovery is recursive and no longer limited to a single directory level.
+
 ---
 
-## Features
+## Library Analysis
 
-### Library Analysis
-
-Scan music libraries.
+Scan a library:
 
     dftr scan /music
 
@@ -106,21 +102,22 @@ JSON output:
 
     dftr scan /music --json
 
-Detects:
+Provides:
 
-- albums
-- compilations
-- soundtracks
-- metadata sources
+- album detection
+- compilation detection
+- soundtrack detection
+- metadata source information
+- track counts
 - disc numbers
-- cryptic names
+- container information
 - rename candidates
 
 ---
 
-### Diagnostics
+## Diagnostics
 
-Inspect library structure.
+Inspect library structure:
 
     dftr doctor /music
 
@@ -137,9 +134,9 @@ Detects:
 
 ---
 
-### Statistics
+## Statistics
 
-Generate collection statistics.
+Generate statistics:
 
     dftr stats /music
 
@@ -149,9 +146,11 @@ JSON output:
 
 Includes:
 
-- album count
-- compilation count
-- soundtrack count
+- albums
+- compilations
+- soundtracks
+- containers
+- cryptic directories
 - TOC usage
 - CUE usage
 - rename candidates
@@ -159,9 +158,9 @@ Includes:
 
 ---
 
-### Quality Analysis
+## Quality Analysis
 
-Evaluate metadata quality.
+Evaluate metadata quality:
 
     dftr quality /music
 
@@ -169,23 +168,30 @@ JSON output:
 
     dftr quality /music --json
 
-Current checks:
+Current quality checks:
 
 - missing artists
-- missing albums
+- missing album names
 - weak metadata sources
-- inconsistent compilation metadata
-- container-related issues
+- inconsistent compilation naming
+- container metadata issues
+
+Example:
+
+    Quality Score: 86%
+
+    WARN album/foo
+      missing_artist
 
 ---
 
-### Metadata Repair
+## Metadata Repair
 
-Preview:
+Preview repairs:
 
     dftr repair /music
 
-Apply:
+Apply repairs:
 
     dftr repair /music --yes
 
@@ -201,9 +207,19 @@ Current repair rules:
 
 Repairs are written directly into file metadata.
 
+Example:
+
+Before:
+
+    Artist: Unknown Artist
+
+After:
+
+    Artist: Loyft
+
 ---
 
-### Directory Renaming
+## Directory Renaming
 
 Preview:
 
@@ -225,7 +241,7 @@ Rollback:
 
     dftr cover /music
 
-### Search Sources
+### Search Artwork Sources
 
     dftr cover /music --fetch
 
@@ -252,15 +268,15 @@ Recognized filenames:
     artwork.*
     albumart.*
 
-Supported image formats:
+Recognized formats:
 
     jpg
     jpeg
     png
 
-Recursive artwork discovery is supported.
+Artwork discovery is recursive.
 
-Downloaded artwork is normalized to:
+Downloaded artwork is always normalized to:
 
     cover.jpg
 
@@ -275,15 +291,44 @@ Compatible with:
 
 ## Container Engine
 
-Version 0.1.3 introduces recursive container discovery.
+Version 0.1.3 introduces a dedicated container engine.
 
-Supported scenarios:
+The container engine models structures such as:
 
-- artist discographies
-- soundtrack collections
-- multi-disc releases
-- edition collections
-- nested container structures
+### Artist Containers
+
+Example:
+
+    Truckfighters
+    ├── Gravity X
+    ├── Mania
+    ├── Phi
+    └── Fuzzsplit of the Century
+
+### Disc Containers
+
+Example:
+
+    Album
+    ├── CD1
+    ├── CD2
+    └── CD3
+
+### Edition Containers
+
+Example:
+
+    Frostpunk Original Soundtrack
+    ├── FLAC
+    └── WAV
+
+### Soundtrack Containers
+
+Example:
+
+    Cyberpunk 2077 Bonus Content
+    └── soundtrack
+        └── mp3
 
 ### Detect Containers
 
@@ -295,7 +340,7 @@ Generate metadata:
 
     dftr container /music --yes
 
-### Container Types
+### Supported Container Types
 
 - artist_container
 - disc_container
@@ -305,7 +350,7 @@ Generate metadata:
 
 ### Generated Files
 
-Container processing generates:
+Container processing creates:
 
     .dftr-container.json
     collection.nfo
@@ -339,11 +384,11 @@ Example:
 
 ## Jellyfin Collection Foundation
 
-Container generation creates:
+Container processing generates:
 
     collection.nfo
 
-Fields:
+Current metadata fields:
 
 - title
 - uniqueid
@@ -357,7 +402,9 @@ Container artwork:
 
     poster.jpg
 
-is generated automatically from existing child album artwork.
+is automatically derived from existing child album artwork.
+
+This provides the foundation for Jellyfin collection support.
 
 ---
 
@@ -375,7 +422,7 @@ Repair metadata:
 
     dftr repair /music --yes
 
-Download cover art:
+Download artwork:
 
     dftr cover /music --yes
 
@@ -405,7 +452,7 @@ Available for:
     dftr cover --fetch --json
     dftr cover --plan --json
 
-All outputs include:
+All formats include:
 
     {
       "schema_version": 1
@@ -425,6 +472,7 @@ Features:
 - rename rollback
 - collision protection
 - download planning
+- recursive discovery
 - container-aware processing
 
 No modifications are performed unless explicitly requested.
