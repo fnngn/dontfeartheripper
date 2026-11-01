@@ -2,9 +2,9 @@
 
 ## Container Engine
 
-### Recursive Container Discovery
+dontfeartheripper now supports recursive container discovery and metadata generation.
 
-Supported container types:
+### Supported Container Types
 
 - artist_container
 - disc_container
@@ -12,9 +12,20 @@ Supported container types:
 - soundtrack_container
 - generic_container
 
+### Recursive Discovery
+
+- nested containers
+- multi-level hierarchies
+- root container selection
+- parent/child relationships
+
 ### Container Metadata
 
-Generated metadata now includes:
+Generated:
+
+- .dftr-container.json
+
+Metadata includes:
 
 - container_id
 - parent_container
@@ -27,17 +38,12 @@ Generated metadata now includes:
 
 ### Jellyfin Collection Foundation
 
-`dftr container --yes` now generates:
+Generated:
 
-- .dftr-container.json
 - collection.nfo
 - poster.jpg
 
-for detected root containers.
-
-### collection.nfo
-
-Generated fields:
+collection.nfo includes:
 
 - title
 - uniqueid
@@ -47,10 +53,14 @@ Generated fields:
 - depth
 - dateadded
 
-### Container Artwork
+Container artwork is generated automatically from existing child album artwork.
 
-Container artwork is automatically generated from the first available child album cover.
+### Commands
 
-### Testing
+    dftr container
+    dftr container --yes
 
-31 tests passing.
+### Test Status
+
+31 passed
+0 failed
