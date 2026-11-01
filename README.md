@@ -152,7 +152,7 @@ This is compatible with:
 - Navidrome
 
 ---
-\n### Metadata Repair
+### Metadata Repair
 
 Preview repairs:
 
@@ -332,37 +332,3 @@ Current status:
 ## License
 
 GPL-3.0
-
-
-
-## Container Engine
-
-dontfeartheripper supports recursive container discovery for:
-
-- artist discographies
-- soundtrack collections
-- multi-disc releases
-- format editions
-
-Supported container types:
-
-- artist_container
-- disc_container
-- edition_container
-- soundtrack_container
-- generic_container
-
-Generate container metadata:
-
-    dftr container
-
-Write metadata and Jellyfin assets:
-
-    dftr container --yes
-
-Generated files:
-
-- .dftr-container.json
-- collection.nfo
-- poster.jpg
-
