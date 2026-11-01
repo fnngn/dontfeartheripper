@@ -33,6 +33,7 @@ from .progress import (
     report_progress,
 )
 from .library_search import search_library
+from .library_db import invalidate_library, load_library
 from .jellyfin import (
     JellyfinError,
     generate_jellyfin_collections,
@@ -43,7 +44,6 @@ from .repair import (
     apply_repairs,
     undo_repairs,
 )
-from .scanner import scan_library
 from .stats import build_stats
 
 
@@ -108,11 +108,15 @@ def _call_with_progress(function, *args, progress=None):
 
 
 def _scan_library(root, progress=None):
-    return _call_with_progress(
-        scan_library,
+    return load_library(
         root,
-        progress=progress,
+        progress,
+        refresh=True,
     )
+
+
+def _load_library(root, progress=None):
+    return load_library(root, progress)
 
 
 def _action_lines(
@@ -183,7 +187,6 @@ def _action_lines(
     if action == "search":
         results = search_library(
             root,
-            items,
             search_query or "",
             progress,
         )
@@ -417,6 +420,58 @@ def _put(screen, y, x, text, width, attr=0):
         pass
 
 
+def _wrapped_lines(lines, width):
+    return [
+        part
+        for line in lines
+        for part in (
+            textwrap.wrap(
+                str(line),
+                width=max(1, width),
+                replace_whitespace=False,
+                drop_whitespace=True,
+            )
+            or [""]
+        )
+    ]
+
+
+def _scroll_limit(screen, lines):
+    height, width = screen.getmaxyx()
+    sidebar_width = min(25, width // 3)
+    content_width = width - sidebar_width - 4
+    visible_height = height - 2 - 5 - 1
+    return max(
+        0,
+        len(_wrapped_lines(lines, content_width)) - visible_height,
+    )
+
+
+def _mouse_scroll_offset(screen, lines, offset, x, y, state):
+    if state & getattr(curses, "BUTTON4_PRESSED", 0):
+        delta = -3
+    elif state & getattr(curses, "BUTTON5_PRESSED", 0):
+        delta = 3
+    else:
+        return None
+
+    height, width = screen.getmaxyx()
+    sidebar_width = min(25, width // 3)
+    content_x = sidebar_width + 2
+    menu_top = 5
+    footer_y = height - 2
+    visible_height = footer_y - menu_top - 1
+    if (
+        x < content_x
+        or y < menu_top
+        or y >= menu_top + visible_height
+    ):
+        return None
+
+    max_offset = _scroll_limit(screen, lines)
+    return max(0, min(offset + delta, max_offset))
+
+
 def _draw(
     screen,
     root,
@@ -574,19 +629,7 @@ def _draw(
         )
         wrapped_lines = []
     else:
-        wrapped_lines = [
-            part
-            for line in lines
-            for part in (
-                textwrap.wrap(
-                    str(line),
-                    width=max(1, content_width),
-                    replace_whitespace=False,
-                    drop_whitespace=True,
-                )
-                or [""]
-            )
-        ]
+        wrapped_lines = _wrapped_lines(lines, content_width)
     for row, part in enumerate(
         wrapped_lines[offset : offset + visible_height]
     ):
@@ -619,8 +662,8 @@ def _draw(
         help_text = "Up/Down: select  Enter: open  r: refresh  q: quit"
     else:
         help_text = (
-            "Up/Down: select  Enter: open  Esc: main menu  "
-            "PgUp/PgDn: scroll  r: refresh  q: quit"
+            "Wheel/PgUp/PgDn: scroll · Enter: open · Esc: menu · "
+            "r: refresh · q: quit"
         )
     _put(screen, height - 1, 1, help_text, width - 2)
     screen.refresh()
@@ -637,6 +680,15 @@ def _main(screen, root):
 
     if hasattr(screen, "timeout"):
         screen.timeout(100)
+    mouse_events = (
+        getattr(curses, "BUTTON4_PRESSED", 0)
+        | getattr(curses, "BUTTON5_PRESSED", 0)
+    )
+    if mouse_events:
+        try:
+            curses.mousemask(mouse_events)
+        except curses.error:
+            pass
 
     events: Queue = Queue()
     executor = ThreadPoolExecutor(max_workers=1)
@@ -681,7 +733,7 @@ def _main(screen, root):
 
     previous_sigint_handler = signal.getsignal(signal.SIGINT)
     signal.signal(signal.SIGINT, handle_sigint)
-    start_job(lambda progress: _scan_library(root, progress))
+    start_job(lambda progress: _load_library(root, progress))
 
     try:
         while True:
@@ -735,6 +787,13 @@ def _main(screen, root):
                     try:
                         result = active_future.result()
                     except OperationCancelled as exc:
+                        if job_action in {
+                            "repair-apply",
+                            "repair-undo",
+                            "rename-apply",
+                            "rename-undo",
+                        }:
+                            invalidate_library(root)
                         lines = [
                             "Operation stopped at a safe checkpoint.",
                             str(exc),
@@ -829,6 +888,13 @@ def _main(screen, root):
                     confirm_action = None
 
                     def run_confirmed_action(progress):
+                        if action in (
+                            "rename-apply",
+                            "rename-undo",
+                            "repair-apply",
+                            "repair-undo",
+                        ):
+                            invalidate_library(root)
                         action_lines = _action_lines(
                             action,
                             root,
@@ -836,7 +902,12 @@ def _main(screen, root):
                             progress,
                         )
                         refreshed = None
-                        if action in ("rename-apply", "rename-undo"):
+                        if action in (
+                            "rename-apply",
+                            "rename-undo",
+                            "repair-apply",
+                            "repair-undo",
+                        ):
                             refreshed = _scan_library(
                                 root,
                                 progress,
@@ -870,6 +941,22 @@ def _main(screen, root):
                 lines = _main_menu_lines()
                 offset = 0
                 continue
+            if key == getattr(curses, "KEY_MOUSE", None):
+                try:
+                    _, mouse_x, mouse_y, _, state = curses.getmouse()
+                except curses.error:
+                    continue
+                new_offset = _mouse_scroll_offset(
+                    screen,
+                    lines,
+                    offset,
+                    mouse_x,
+                    mouse_y,
+                    state,
+                )
+                if new_offset is not None:
+                    offset = new_offset
+                continue
             if key in (curses.KEY_UP, ord("k")):
                 selected = (selected - 1) % len(entries)
                 continue
@@ -877,10 +964,13 @@ def _main(screen, root):
                 selected = (selected + 1) % len(entries)
                 continue
             if active_group is not None and key == curses.KEY_PPAGE:
-                offset = max(0, offset - 8)
+                offset = max(
+                    0,
+                    min(offset - 8, _scroll_limit(screen, lines)),
+                )
                 continue
             if active_group is not None and key == curses.KEY_NPAGE:
-                offset += 8
+                offset = min(offset + 8, _scroll_limit(screen, lines))
                 continue
             if key in (ord("r"), ord("R")):
                 job_kind = "refresh-scan"

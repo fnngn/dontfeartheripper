@@ -710,8 +710,8 @@ def test_tui_groups_actions_and_esc_returns_to_main_menu(
     monkeypatch.setattr(curses, "init_pair", lambda *args: None)
     monkeypatch.setattr(curses, "color_pair", lambda pair: pair)
     monkeypatch.setattr(
-        "dontfeartheripper.tui.scan_library",
-        lambda root: [],
+        "dontfeartheripper.tui.load_library",
+        lambda root, progress=None, *, refresh=False: [],
     )
     screen = FakeScreen()
 
@@ -779,8 +779,8 @@ def test_tui_uses_default_background_and_playlist_layout(
     )
     monkeypatch.setattr(curses, "color_pair", lambda pair: pair)
     monkeypatch.setattr(
-        "dontfeartheripper.tui.scan_library",
-        lambda root: [],
+        "dontfeartheripper.tui.load_library",
+        lambda root, progress=None, *, refresh=False: [],
     )
     screen = FakeScreen()
 
@@ -794,3 +794,60 @@ def test_tui_uses_default_background_and_playlist_layout(
     assert any("MAIN MENU" in text for _, _, text in screen.drawn)
     assert any("SECTIONS" in text for _, _, text in screen.drawn)
     assert any("[#####" in text for _, _, text in screen.drawn)
+
+
+def test_tui_mouse_wheel_scrolls_only_the_content_area():
+    import curses
+
+    from dontfeartheripper.tui import _mouse_scroll_offset
+
+    class FakeScreen:
+        def getmaxyx(self):
+            return 24, 80
+
+    screen = FakeScreen()
+    lines = [f"Line {index}" for index in range(30)]
+    content_x = min(25, 80 // 3) + 2
+    down = _mouse_scroll_offset(
+        screen,
+        lines,
+        0,
+        content_x,
+        6,
+        curses.BUTTON5_PRESSED,
+    )
+    assert down == 3
+
+    bottom = down
+    for _ in range(3):
+        bottom = _mouse_scroll_offset(
+            screen,
+            lines,
+            bottom,
+            content_x,
+            6,
+            curses.BUTTON5_PRESSED,
+        )
+    assert bottom == 12
+
+    up = _mouse_scroll_offset(
+        screen,
+        lines,
+        bottom,
+        content_x,
+        6,
+        curses.BUTTON4_PRESSED,
+    )
+    assert up == 9
+
+    assert (
+        _mouse_scroll_offset(
+            screen,
+            lines,
+            up,
+            2,
+            6,
+            curses.BUTTON5_PRESSED,
+        )
+        is None
+    )

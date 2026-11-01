@@ -20,6 +20,44 @@ from dontfeartheripper.container import (
 )
 
 
+def test_container_detection_scans_each_directory_once(
+    tmp_path,
+    monkeypatch,
+):
+    import os
+
+    artist = tmp_path / "album" / "Artist"
+    first_album = artist / "First"
+    second_album = artist / "Second"
+    first_album.mkdir(parents=True)
+    second_album.mkdir()
+    (first_album / "one.flac").touch()
+    (second_album / "two.flac").touch()
+
+    visited = []
+    real_scandir = os.scandir
+
+    def track_scandir(path):
+        visited.append(Path(path))
+        return real_scandir(path)
+
+    monkeypatch.setattr(
+        "dontfeartheripper.container.os.scandir",
+        track_scandir,
+    )
+    monkeypatch.setattr(
+        "dontfeartheripper.container.has_audio",
+        lambda *args, **kwargs: (_ for _ in ()).throw(
+            AssertionError("container detection must not rescan subtrees")
+        ),
+    )
+
+    containers = detect_containers(tmp_path)
+
+    assert [container["path"] for container in containers] == [artist]
+    assert len(visited) == len(set(visited))
+
+
 def test_artist_container_detection(
     tmp_path,
 ):

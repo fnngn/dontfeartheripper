@@ -1,3 +1,32 @@
+# dontfeartheripper v0.1.8
+
+## Highlights
+
+- Added a persistent SQLite library index for album, track, artist, genre,
+  and collection metadata.
+- Reworked collection detection to inspect each directory once and batch
+  database writes during the initial index build.
+- Added mouse-wheel scrolling for long TUI reports.
+- Build the index on first use; subsequent searches and library reports load
+  indexed metadata instead of repeatedly scanning all music files.
+- Use indexed full-text search for quick substring matching.
+- Refresh the index explicitly with `dftr scan /music` or `r` in the TUI.
+
+## Index details
+
+- Store the database in the user's XDG cache directory, outside the music
+  library; `DFTR_DATABASE_PATH` can override its location.
+- Build or refresh the index transactionally and retain the prior valid index
+  if a refresh is interrupted.
+- Invalidate the affected index when tag repairs or folder renames are applied
+  or undone.
+
+## Verification
+
+    102 tests passing
+
+---
+
 # dontfeartheripper v0.1.7
 
 ## Highlights

@@ -1,4 +1,5 @@
 import json
+import os
 import xml.etree.ElementTree as ET
 
 from pathlib import Path
@@ -133,7 +134,6 @@ def detect_containers(
     root,
     progress: ProgressCallback | None = None,
 ):
-
     containers = []
     inspected = 0
 
@@ -148,11 +148,13 @@ def detect_containers(
         if not base.exists():
             continue
 
-        for directory in base.rglob("*"):
+        children = {}
+        subtree_has_audio = {}
+        visit_order = []
 
-            if not directory.is_dir():
-                continue
-
+        def scan_directory(directory):
+            nonlocal inspected
+            visit_order.append(directory)
             inspected += 1
             if inspected == 1 or inspected % 25 == 0:
                 report_progress(
@@ -160,47 +162,108 @@ def detect_containers(
                     f"Inspecting containers: {directory}",
                     inspected,
                 )
-            tree = build_container_tree(
-                directory,
-                directory,
-                progress,
-            )
+            direct_children = []
+            has_audio_here = False
+            entries_seen = 0
+            with os.scandir(directory) as entries:
+                for entry in entries:
+                    entries_seen += 1
+                    if entries_seen % 1000 == 0:
+                        report_progress(
+                            progress,
+                            f"Inspecting containers: {directory}",
+                            inspected,
+                        )
+                    if entry.is_dir(follow_symlinks=False):
+                        direct_children.append(Path(entry.path))
+                    elif (
+                        entry.is_file(follow_symlinks=False)
+                        and Path(entry.name).suffix.lower()
+                        in AUDIO_EXTENSIONS
+                    ):
+                        has_audio_here = True
 
-            album_count = count_album_nodes(
-                tree
-            )
+            direct_children.sort()
+            children[directory] = direct_children
+            has_audio_below = has_audio_here
+            for child in direct_children:
+                has_audio_below = (
+                    scan_directory(child) or has_audio_below
+                )
+            subtree_has_audio[directory] = has_audio_below
+            return has_audio_below
 
-            if album_count < 2:
+        scan_directory(base)
+
+        album_counts = {}
+        for directory in reversed(visit_order):
+            count = 0
+            for child in children[directory]:
+                nested_audio = any(
+                    subtree_has_audio[grandchild]
+                    for grandchild in children[child]
+                )
+                if nested_audio:
+                    count += album_counts[child]
+                elif subtree_has_audio[child]:
+                    count += 1
+            album_counts[directory] = count
+
+        candidate_paths = {
+            directory
+            for directory in visit_order
+            if directory != base and album_counts[directory] >= 2
+        }
+
+        def build_indexed_tree(directory, root_directory):
+            nodes = []
+            for child in children[directory]:
+                nested_audio = any(
+                    subtree_has_audio[grandchild]
+                    for grandchild in children[child]
+                )
+                if nested_audio:
+                    nodes.append(
+                        {
+                            "type": "container",
+                            "name": child.name,
+                            "children": build_indexed_tree(
+                                child,
+                                root_directory,
+                            ),
+                        }
+                    )
+                elif subtree_has_audio[child]:
+                    nodes.append(
+                        {
+                            "type": "album",
+                            "name": child.name,
+                            "path": str(child.relative_to(root_directory)),
+                        }
+                    )
+            return nodes
+
+        for directory in visit_order:
+            if directory == base:
                 continue
-
+            if album_counts[directory] < 2:
+                continue
+            if any(parent in candidate_paths for parent in directory.parents):
+                continue
             containers.append(
                 {
                     "path": directory,
-                    "children": tree,
+                    "children": build_indexed_tree(directory, directory),
                 }
             )
 
-    root_containers = []
-
-    for container in containers:
-
-        if is_nested_container(
-            container["path"],
-            containers,
-        ):
-            continue
-
-        root_containers.append(
-            container
-        )
-
     report_progress(
         progress,
-        f"Found {len(root_containers)} containers",
-        len(root_containers),
-        len(root_containers),
+        f"Found {len(containers)} containers",
+        len(containers),
+        len(containers),
     )
-    return root_containers
+    return containers
 
 
 

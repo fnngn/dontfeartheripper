@@ -9,7 +9,10 @@ import typer
 from pathlib import Path
 from rich import print
 
-from dontfeartheripper.scanner import scan_library
+from dontfeartheripper.library_db import (
+    invalidate_library,
+    load_library,
+)
 from dontfeartheripper.stats import build_stats
 from dontfeartheripper.quality import analyze_quality
 from dontfeartheripper.cover import (
@@ -46,7 +49,7 @@ from dontfeartheripper.progress import (
     report_progress,
 )
 
-app = typer.Typer(help="dontfeartheripper v0.1.7")
+app = typer.Typer(help="dontfeartheripper v0.1.8")
 
 
 def _with_progress(label, operation):
@@ -123,8 +126,12 @@ def scan(
     ),
 ) -> None:
     items = _with_progress(
-        "Scanning library",
-        lambda progress: scan_library(Path(path), progress),
+        "Building music search index",
+        lambda progress: load_library(
+            Path(path),
+            progress,
+            refresh=True,
+        ),
     )
 
     if json_output:
@@ -196,8 +203,8 @@ def doctor(
     ),
 ) -> None:
     items = _with_progress(
-        "Scanning library",
-        lambda progress: scan_library(Path(path), progress),
+        "Loading music index",
+        lambda progress: load_library(Path(path), progress),
     )
 
     if json_output:
@@ -258,8 +265,8 @@ def fix(
     ),
 ) -> None:
     items = _with_progress(
-        "Scanning library",
-        lambda progress: scan_library(Path(path), progress),
+        "Loading music index",
+        lambda progress: load_library(Path(path), progress),
     )
 
     plan = build_rename_plan(items)
@@ -290,6 +297,7 @@ def fix(
         return
 
     if yes:
+        invalidate_library(Path(path))
         result = _with_progress(
             "Renaming folders",
             lambda progress: apply_rename_plan(plan, progress),
@@ -311,6 +319,7 @@ def undo() -> None:
         print("No rollback file found.")
         return
 
+    invalidate_library()
     result = _with_progress(
         "Restoring folder names",
         lambda progress: undo_renames(progress),
@@ -340,8 +349,8 @@ def stats(
     ),
 ) -> None:
     items = _with_progress(
-        "Scanning library",
-        lambda progress: scan_library(Path(path), progress),
+        "Loading music index",
+        lambda progress: load_library(Path(path), progress),
     )
     stats = build_stats(items)
 
@@ -380,8 +389,8 @@ def quality(
     ),
 ) -> None:
     items = _with_progress(
-        "Scanning library",
-        lambda progress: scan_library(Path(path), progress),
+        "Loading music index",
+        lambda progress: load_library(Path(path), progress),
     )
     report = analyze_quality(items)
 
@@ -426,8 +435,8 @@ def repair(
     ),
 ) -> None:
     items = _with_progress(
-        "Scanning library",
-        lambda progress: scan_library(Path(path), progress),
+        "Loading music index",
+        lambda progress: load_library(Path(path), progress),
     )
     report = _with_progress(
         "Analyzing tag repairs",
@@ -468,6 +477,7 @@ def repair(
     print(f"Repairs: {len(repairs)}")
 
     if yes:
+        invalidate_library(Path(path))
         applied = _with_progress(
             "Updating audio tags",
             lambda progress: apply_repairs(repairs, progress),
@@ -482,6 +492,7 @@ def repair(
 
 @app.command("repair-undo")
 def repair_undo() -> None:
+    invalidate_library()
     reverted = _with_progress(
         "Restoring audio tags",
         lambda progress: undo_repairs(progress),
@@ -517,8 +528,8 @@ def cover(
 ) -> None:
 
     items = _with_progress(
-        "Scanning library",
-        lambda progress: scan_library(Path(path), progress),
+        "Loading music index",
+        lambda progress: load_library(Path(path), progress),
     )
 
     if yes:

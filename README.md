@@ -65,6 +65,13 @@ Run tests:
 
     uv run pytest -v
 
+The first library operation builds a local SQLite index of albums, tracks,
+genres, artists, and collections. Later searches and library reports use this
+index rather than rereading the music files. The index lives in
+`$XDG_CACHE_HOME/dontfeartheripper/library.sqlite3` (normally
+`~/.cache/dontfeartheripper/library.sqlite3`). Set `DFTR_DATABASE_PATH` to
+choose another database location.
+
 ---
 
 ## Supported Audio Formats
@@ -88,6 +95,10 @@ Recursive discovery supports:
 ### Scan Library
 
     dftr scan /music
+
+`dftr scan` rebuilds the index from the current files and tags. In the TUI,
+press `r` to refresh it. Other commands use the saved index and do not
+automatically rescan the library.
 
 JSON:
 
@@ -113,9 +124,10 @@ Start the keyboard-driven library dashboard:
 
 Choose a section in the main menu with the arrow keys (or `j`/`k`) and press
 Enter to open its options. Press Escape or Backspace to return to the main
-menu. Scroll long reports with Page Up/Page Down, refresh the scan with `r`,
-and quit with `q`. Changes to tags, directories, or container metadata require
-a separate confirmation. The restrained playlist-style interface uses your
+menu. Scroll long reports with Page Up/Page Down or the mouse wheel over the
+report area. Refresh the scan with `r` and quit with `q`. Changes to tags,
+directories, or container metadata require a separate confirmation. The
+restrained playlist-style interface uses your
 terminal's default colors and background. Scans and long-running actions run
 in the background and show a live progress indicator and current operation.
 Command-line scans, cover lookups, downloads, and Jellyfin operations also
