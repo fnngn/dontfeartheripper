@@ -90,3 +90,39 @@ def metadata_needs_recovery(
         not metadata.artist
         or not metadata.album
     )
+
+
+def build_repair_operations(
+    original,
+    candidate,
+):
+
+    repairs = []
+
+    if (
+        not original.artist
+        and candidate.artist
+    ):
+        repairs.append(
+            {
+                "field": "artist",
+                "old": original.artist,
+                "new": candidate.artist,
+                "rule": "metadata_recovery",
+            }
+        )
+
+    if (
+        not original.album
+        and candidate.album
+    ):
+        repairs.append(
+            {
+                "field": "album",
+                "old": original.album,
+                "new": candidate.album,
+                "rule": "metadata_recovery",
+            }
+        )
+
+    return repairs

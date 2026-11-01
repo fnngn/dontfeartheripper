@@ -533,3 +533,47 @@ def write_collection_nfo(
     )
 
     return target
+
+
+def load_container_metadata(
+    directory,
+):
+
+    metadata_file = (
+        Path(directory)
+        / CONTAINER_FILENAME
+    )
+
+    if not metadata_file.exists():
+        return None
+
+    try:
+
+        return json.loads(
+            metadata_file.read_text()
+        )
+
+    except Exception:
+
+        return None
+
+
+def resolve_container_context(
+    path,
+):
+
+    current = Path(path).resolve()
+
+    for parent in (
+        current,
+        *current.parents,
+    ):
+
+        metadata = load_container_metadata(
+            parent
+        )
+
+        if metadata:
+            return metadata
+
+    return None

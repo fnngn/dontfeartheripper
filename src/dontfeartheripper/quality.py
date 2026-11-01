@@ -1,3 +1,7 @@
+from .container import (
+    load_container_metadata,
+)
+
 def analyze_quality(items):
     issues = []
 
@@ -85,3 +89,43 @@ def analyze_quality(items):
         "quality_score": score,
         "issues": issues,
     }
+
+
+def quality_container_checks(
+    metadata,
+    has_collection_nfo,
+    has_poster,
+):
+
+    issues = []
+
+    if not has_collection_nfo:
+        issues.append(
+            {
+                "type":
+                "container_missing_collection_nfo"
+            }
+        )
+
+    if not has_poster:
+        issues.append(
+            {
+                "type":
+                "container_missing_poster"
+            }
+        )
+
+    if (
+        metadata.get(
+            "container_depth",
+            0,
+        ) > 3
+    ):
+        issues.append(
+            {
+                "type":
+                "container_deep_hierarchy"
+            }
+        )
+
+    return issues

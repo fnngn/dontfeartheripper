@@ -105,3 +105,22 @@ def test_recovery_detection():
             album="Whoracle",
         )
     )
+
+
+def test_metadata_candidate_repairable():
+
+    local = TrackMetadata(
+        artist="",
+        album="",
+    )
+
+    candidate = build_recovery_candidate(
+        local,
+        container_metadata={
+            "artist": "Truckfighters",
+            "album": "Gravity X",
+        },
+    )
+
+    assert candidate.artist == "Truckfighters"
+    assert candidate.album == "Gravity X"

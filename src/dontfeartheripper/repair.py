@@ -3,6 +3,12 @@ import json
 from pathlib import Path
 
 from mutagen.flac import FLAC
+from .container import resolve_container_context
+from .recovery import (
+    build_recovery_candidate,
+    build_repair_operations,
+)
+from .tags2 import TrackMetadata
 
 REPAIR_UNDO_FILE = Path(".dftr-last-repair.json")
 
@@ -70,6 +76,59 @@ def analyze_repairs(items):
                             "safe": True,
                         }
                     )
+
+
+
+    #
+    # recovery engine
+    #
+
+    for item in items:
+
+        if item.container_directory:
+            continue
+
+        context = resolve_container_context(
+            item.path
+        )
+
+        if not context:
+            continue
+
+        local = TrackMetadata(
+            artist=item.artist_name,
+            album=item.album_name,
+        )
+
+        candidate = build_recovery_candidate(
+            local,
+            container_metadata={
+                "artist": context.get("name"),
+            },
+        )
+
+        recovery_repairs = (
+            build_repair_operations(
+                local,
+                candidate,
+            )
+        )
+
+        for repair in recovery_repairs:
+
+            repairs.append(
+                {
+                    "path": str(item.path),
+                    "files": find_flac_files(
+                        item.path
+                    ),
+                    "field": repair["field"],
+                    "old": repair["old"] or "",
+                    "new": repair["new"],
+                    "rule": repair["rule"],
+                    "safe": True,
+                }
+            )
 
     return {
         "schema_version": 1,

@@ -10,6 +10,12 @@ sys.path.insert(
 
 from dontfeartheripper.container import (
     detect_containers,
+    build_container_metadata,
+    write_container_metadata,
+    load_container_metadata,
+    resolve_container_context,
+    build_collection_nfo,
+    write_collection_nfo,
 )
 
 
@@ -789,4 +795,174 @@ def test_container_poster_created(
     assert (
         root
         / "poster.jpg"
+    ).exists()
+
+
+from dontfeartheripper.container import (
+    load_container_metadata,
+    resolve_container_context,
+    write_container_metadata,
+)
+
+
+def test_load_container_metadata(
+    tmp_path,
+):
+
+    root = (
+        tmp_path
+        / "album"
+        / "Truckfighters"
+    )
+
+    (
+        root / "Gravity X"
+    ).mkdir(
+        parents=True
+    )
+
+    (
+        root / "Phi"
+    ).mkdir()
+
+    (
+        root / "Gravity X"
+        / "track.flac"
+    ).touch()
+
+    (
+        root / "Phi"
+        / "track.flac"
+    ).touch()
+
+    container = detect_containers(
+        tmp_path
+    )[0]
+
+    write_container_metadata(
+        container
+    )
+
+    metadata = load_container_metadata(
+        root
+    )
+
+    assert metadata is not None
+
+    assert (
+        metadata["container_type"]
+        == "artist_container"
+    )
+
+
+def test_resolve_container_context(
+    tmp_path,
+):
+
+    root = (
+        tmp_path
+        / "album"
+        / "Truckfighters"
+    )
+
+    (
+        root
+        / "Gravity X"
+    ).mkdir(
+        parents=True
+    )
+
+    (
+        root
+        / "Phi"
+    ).mkdir()
+
+    (
+        root
+        / "Gravity X"
+        / "track.flac"
+    ).touch()
+
+    (
+        root
+        / "Phi"
+        / "track.flac"
+    ).touch()
+
+    container = detect_containers(
+        tmp_path
+    )[0]
+
+    write_container_metadata(
+        container
+    )
+
+    metadata = resolve_container_context(
+        root
+        / "Gravity X"
+    )
+
+    assert metadata is not None
+
+    assert (
+        metadata["name"]
+        == "Truckfighters"
+    )
+
+    assert (
+        metadata["container_type"]
+        == "artist_container"
+    )
+
+
+def test_container_quality_files_exist(
+    tmp_path,
+):
+
+    root = (
+        tmp_path
+        / "album"
+        / "Truckfighters"
+    )
+
+    (
+        root / "Gravity X"
+    ).mkdir(
+        parents=True
+    )
+
+    (
+        root / "Phi"
+    ).mkdir()
+
+    (
+        root / "Gravity X"
+        / "track.flac"
+    ).touch()
+
+    (
+        root / "Phi"
+        / "track.flac"
+    ).touch()
+
+    container = detect_containers(
+        tmp_path
+    )[0]
+
+    write_container_metadata(
+        container
+    )
+
+    write_collection_nfo(
+        container
+    )
+
+    assert (
+        root
+        / ".dftr-container.json"
+    ).exists()
+
+    assert (
+        root
+        / "collection.nfo"
     ).exists()

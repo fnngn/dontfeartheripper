@@ -127,3 +127,37 @@ def test_scan_prefers_high_quality_flac_data():
         "In Flames",
         "Whoracle",
     )
+
+
+from dontfeartheripper.recovery import (
+    build_repair_operations,
+)
+from dontfeartheripper.tags2 import (
+    TrackMetadata,
+)
+
+
+def test_recovery_repair_generation():
+
+    original = TrackMetadata(
+        artist="",
+        album="",
+    )
+
+    candidate = TrackMetadata(
+        artist="Truckfighters",
+        album="Gravity X",
+    )
+
+    repairs = build_repair_operations(
+        original,
+        candidate,
+    )
+
+    fields = {
+        r["field"]
+        for r in repairs
+    }
+
+    assert "artist" in fields
+    assert "album" in fields
