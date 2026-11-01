@@ -3,6 +3,8 @@ import json
 from pathlib import Path
 
 from mutagen.flac import FLAC
+from .progress import ProgressCallback, report_progress
+from .atomic import atomic_write_text
 from .container import resolve_container_context
 from .recovery import (
     build_recovery_candidate,
@@ -51,10 +53,21 @@ def find_nearest_album_nfo(
 
 
 
-def analyze_repairs(items):
+def analyze_repairs(
+    items,
+    progress: ProgressCallback | None = None,
+):
     repairs = []
+    total = len(items)
 
-    for item in items:
+    for index, item in enumerate(items, start=1):
+        if index == 1 or index % 20 == 0 or index == total:
+            report_progress(
+                progress,
+                f"Checking repair rules: {item.path.name}",
+                index,
+                total,
+            )
 
         artist = item.artist_name or ""
         files = find_flac_files(item.path)
@@ -113,7 +126,14 @@ def analyze_repairs(items):
     # recovery engine
     #
 
-    for item in items:
+    for index, item in enumerate(items, start=1):
+        if index == 1 or index % 20 == 0 or index == total:
+            report_progress(
+                progress,
+                f"Checking metadata recovery: {item.path.name}",
+                index,
+                total,
+            )
 
         if item.container_directory:
             continue
@@ -281,8 +301,9 @@ def analyze_repairs(items):
 
 
 def save_repair_log(entries):
-    REPAIR_UNDO_FILE.write_text(
-        json.dumps(entries, indent=2)
+    atomic_write_text(
+        REPAIR_UNDO_FILE,
+        json.dumps(entries, indent=2),
     )
 
 
@@ -295,9 +316,19 @@ def load_repair_log():
     )
 
 
-def apply_repairs(repairs):
+def apply_repairs(
+    repairs,
+    progress: ProgressCallback | None = None,
+):
     rollback = []
     applied = 0
+    files = [
+        file_path
+        for repair in repairs
+        for file_path in repair["files"]
+    ]
+    total = len(files)
+    report_progress(progress, "Preparing tag repairs", 0, total)
 
     for repair in repairs:
 
@@ -310,6 +341,12 @@ def apply_repairs(repairs):
             if not file.exists():
                 continue
 
+            report_progress(
+                progress,
+                f"Updating tags: {file.name}",
+                applied,
+                total,
+            )
             audio = FLAC(file)
 
             old_value = ""
@@ -329,29 +366,41 @@ def apply_repairs(repairs):
                     "rule": repair["rule"],
                 }
             )
+            save_repair_log(rollback)
 
             audio[field] = [repair["new"]]
             audio.save()
 
             applied += 1
-
-    save_repair_log(rollback)
+            report_progress(
+                progress,
+                f"Updated tags: {file.name}",
+                applied,
+                total,
+            )
 
     return applied
 
 
-def undo_repairs():
+def undo_repairs(progress: ProgressCallback | None = None):
     rollback = load_repair_log()
 
     reverted = 0
+    total = len(rollback)
 
-    for entry in reversed(rollback):
+    for index, entry in enumerate(reversed(rollback), start=1):
 
         file = Path(entry["file"])
 
         if not file.exists():
             continue
 
+        report_progress(
+            progress,
+            f"Restoring tags: {file.name}",
+            index - 1,
+            total,
+        )
         audio = FLAC(file)
 
         field = entry["field"]
@@ -366,5 +415,11 @@ def undo_repairs():
         audio.save()
 
         reverted += 1
+        report_progress(
+            progress,
+            f"Restored tags: {file.name}",
+            index,
+            total,
+        )
 
     return reverted

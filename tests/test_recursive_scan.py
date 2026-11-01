@@ -109,6 +109,27 @@ def test_scan_reads_metadata_from_supported_audio(
     assert items[0].track_count == 2
 
 
+def test_scan_reports_progress_for_discovery_and_completion(tmp_path):
+    album = tmp_path / "album" / "Progress Album"
+    album.mkdir(parents=True)
+    (album / "track.mp3").touch()
+    updates = []
+
+    scan_library(
+        tmp_path,
+        lambda message, current, total: updates.append(
+            (message, current, total)
+        ),
+    )
+
+    assert any("Searching" in message for message, _, _ in updates)
+    assert any(
+        message.startswith("Read tags:")
+        for message, _, _ in updates
+    )
+    assert updates[-1] == ("Scan complete: 1 library entries", 1, 1)
+
+
 def test_container_children_discovered(tmp_path):
 
     root = (

@@ -1,5 +1,8 @@
 import curses
+from concurrent.futures import Future, ThreadPoolExecutor
 import os
+from queue import Empty, Queue
+import signal
 import sys
 import textwrap
 from pathlib import Path
@@ -22,6 +25,14 @@ from .organizer import (
     build_rename_plan,
     undo_renames,
 )
+from .progress import (
+    CancellationToken,
+    OperationCancelled,
+    ProgressCallback,
+    humanize_progress_message,
+    report_progress,
+)
+from .library_search import search_library
 from .jellyfin import (
     JellyfinError,
     generate_jellyfin_collections,
@@ -50,6 +61,7 @@ MENU_GROUPS = {
         ("dashboard", "Dashboard"),
     ),
     "library": (
+        ("search", "Search library"),
         ("scan", "Library scan"),
         ("doctor", "Diagnostics"),
         ("stats", "Statistics"),
@@ -89,7 +101,28 @@ CONFIRM_ACTIONS = {
 }
 
 
-def _action_lines(action, root, items):
+def _call_with_progress(function, *args, progress=None):
+    if progress is None:
+        return function(*args)
+    return function(*args, progress)
+
+
+def _scan_library(root, progress=None):
+    return _call_with_progress(
+        scan_library,
+        root,
+        progress=progress,
+    )
+
+
+def _action_lines(
+    action,
+    root,
+    items,
+    progress: ProgressCallback | None = None,
+    search_query=None,
+):
+    report_progress(progress, f"Preparing {action.replace('-', ' ')}")
     if action == "dashboard":
         stats = build_stats(items)
         quality = analyze_quality(items)
@@ -147,8 +180,28 @@ def _action_lines(action, root, items):
         )
         return lines
 
+    if action == "search":
+        results = search_library(
+            root,
+            items,
+            search_query or "",
+            progress,
+        )
+        if not results:
+            return [f'No matches found for "{search_query}".']
+        return [
+            f'Search results for "{search_query}"',
+            f"Matches: {len(results)}",
+            "",
+            *results,
+        ]
+
     if action == "covers":
-        report = analyze_covers(items)
+        report = _call_with_progress(
+            analyze_covers,
+            items,
+            progress=progress,
+        )
         lines = [
             f"Missing covers: {len(report['missing_covers'])}",
             "",
@@ -161,7 +214,11 @@ def _action_lines(action, root, items):
         return lines
 
     if action == "containers":
-        containers = detect_containers(root)
+        containers = _call_with_progress(
+            detect_containers,
+            root,
+            progress=progress,
+        )
         if not containers:
             return ["No containers found."]
         return [
@@ -182,7 +239,11 @@ def _action_lines(action, root, items):
             ]
         try:
             report = generate_jellyfin_collections(
-                detect_containers(root),
+                _call_with_progress(
+                    detect_containers,
+                    root,
+                    progress=progress,
+                ),
                 url,
                 api_key,
                 root,
@@ -190,6 +251,7 @@ def _action_lines(action, root, items):
                     "JELLYFIN_LIBRARY_ROOT"
                 ),
                 apply=action == "jellyfin-apply",
+                progress=progress,
             )
         except JellyfinError as exc:
             return [f"Jellyfin error: {exc}"]
@@ -230,8 +292,16 @@ def _action_lines(action, root, items):
         return lines
 
     if action == "covers-download":
-        preview_fetch(items)
-        report = execute_download_plan(items)
+        _call_with_progress(
+            preview_fetch,
+            items,
+            progress=progress,
+        )
+        report = _call_with_progress(
+            execute_download_plan,
+            items,
+            progress=progress,
+        )
         downloads = report["downloads"]
         downloaded = sum(
             1
@@ -247,7 +317,8 @@ def _action_lines(action, root, items):
         ]
 
     if action.startswith("repair"):
-        report = analyze_repairs(items)
+        report_progress(progress, "Analyzing tag repairs")
+        report = analyze_repairs(items, progress)
         repairs = report["repairs"]
         if action == "repair-preview":
             lines = [f"Planned repairs: {len(repairs)}"]
@@ -260,14 +331,21 @@ def _action_lines(action, root, items):
         if action == "repair-apply":
             if not repairs:
                 return ["No repairs to apply."]
+            report_progress(
+                progress,
+                f"Updating {len(repairs)} repair groups",
+                0,
+                len(repairs),
+            )
             return [
-                f"Updated tags: {apply_repairs(repairs)}",
+                f"Updated tags: {apply_repairs(repairs, progress)}",
                 "Rollback file: .dftr-last-repair.json",
             ]
         if action == "repair-undo":
-            return [f"Reverted tags: {undo_repairs()}"]
+            return [f"Reverted tags: {undo_repairs(progress)}"]
 
     if action.startswith("rename"):
+        report_progress(progress, "Building rename plan")
         plan = build_rename_plan(items)
         if action == "rename-preview":
             lines = [f"Rename candidates: {len(plan)}"]
@@ -281,7 +359,7 @@ def _action_lines(action, root, items):
             )
             return lines
         if action == "rename-apply":
-            result = apply_rename_plan(plan)
+            result = apply_rename_plan(plan, progress)
             return [
                 f"Renamed directories: {result['renamed']}",
                 (
@@ -291,7 +369,7 @@ def _action_lines(action, root, items):
                 ),
             ]
         if action == "rename-undo":
-            result = undo_renames()
+            result = undo_renames(progress)
             return [
                 f"Reverted directories: {result['reverted']}",
                 *(
@@ -301,13 +379,30 @@ def _action_lines(action, root, items):
             ]
 
     if action == "container-write":
-        containers = detect_containers(root)
+        report_progress(progress, "Finding containers")
+        containers = _call_with_progress(
+            detect_containers,
+            root,
+            progress=progress,
+        )
         written = 0
-        for container in containers:
+        for index, container in enumerate(containers, start=1):
+            report_progress(
+                progress,
+                f"Writing container files: {container['path'].name}",
+                index - 1,
+                len(containers),
+            )
             write_container_metadata(container)
             write_collection_nfo(container)
             write_container_poster(container)
             written += 1
+            report_progress(
+                progress,
+                f"Wrote container files: {container['path'].name}",
+                index,
+                len(containers),
+            )
         return [f"Container metadata sets written: {written}"]
 
     return []
@@ -333,6 +428,12 @@ def _draw(
     confirm_action,
     menu_title,
     content_title,
+    *,
+    busy=False,
+    progress_current=None,
+    progress_total=None,
+    frame=0,
+    search_query=None,
 ):
     screen.erase()
     height, width = screen.getmaxyx()
@@ -406,21 +507,86 @@ def _draw(
     for row in range(section_y, footer_y):
         _put(screen, row, separator_x, "|", 1)
 
-    _put(screen, footer_y - 1, 0, "-" * (width - 1), width - 1)
-    visible_height = footer_y - menu_top - 1
-    wrapped_lines = [
-        part
-        for line in lines
-        for part in (
-            textwrap.wrap(
-                str(line),
-                width=max(1, content_width),
-                replace_whitespace=False,
-                drop_whitespace=True,
+    if busy:
+        bar_width = max(1, min(16, content_width - 17))
+        if progress_total and progress_total > 0:
+            completed = min(
+                bar_width,
+                round(
+                    bar_width
+                    * min(progress_current or 0, progress_total)
+                    / progress_total
+                ),
             )
-            or [""]
+            bar = "#" * completed + "-" * (bar_width - completed)
+            percent = round(
+                100 * min(progress_current or 0, progress_total)
+                / progress_total
+            )
+            progress_label = (
+                f"[{bar}] {percent:3d}% · "
+                f"{progress_current or 0}/{progress_total}"
+            )
+        else:
+            block_width = min(5, bar_width)
+            travel = max(1, bar_width - block_width)
+            position = frame % (travel * 2)
+            position = position if position <= travel else travel * 2 - position
+            bar = (
+                "-" * position
+                + "#" * block_width
+                + "-" * (bar_width - position - block_width)
+            )
+            progress_label = f"[{bar}]"
+        _put(
+            screen,
+            footer_y - 1,
+            content_x,
+            progress_label,
+            content_width,
+            curses.color_pair(1),
         )
-    ]
+    else:
+        _put(screen, footer_y - 1, 0, "-" * (width - 1), width - 1)
+    visible_height = footer_y - menu_top - 1
+    if search_query is not None:
+        _put(
+            screen,
+            menu_top,
+            content_x,
+            "Search songs, albums, artists, genres, and collections.",
+            content_width,
+        )
+        _put(
+            screen,
+            menu_top + 2,
+            content_x,
+            "Search:",
+            content_width,
+            title_attr,
+        )
+        _put(
+            screen,
+            menu_top + 3,
+            content_x,
+            f"{search_query}_",
+            content_width,
+        )
+        wrapped_lines = []
+    else:
+        wrapped_lines = [
+            part
+            for line in lines
+            for part in (
+                textwrap.wrap(
+                    str(line),
+                    width=max(1, content_width),
+                    replace_whitespace=False,
+                    drop_whitespace=True,
+                )
+                or [""]
+            )
+        ]
     for row, part in enumerate(
         wrapped_lines[offset : offset + visible_height]
     ):
@@ -432,6 +598,9 @@ def _draw(
             content_width,
         )
 
+    if busy:
+        spinner = ("|", "/", "-", chr(92))[frame % 4]
+        status = f"{spinner} {status}"
     _put(
         screen,
         footer_y,
@@ -442,6 +611,10 @@ def _draw(
     )
     if confirm_action:
         help_text = "Confirm? [y] Yes  [n] No"
+    elif busy:
+        help_text = "Esc/Ctrl-C: stop safely · current step will finish first"
+    elif search_query is not None:
+        help_text = "Type to search  Enter: search  Backspace: delete  Esc: cancel"
     elif menu_title == "MAIN MENU":
         help_text = "Up/Down: select  Enter: open  r: refresh  q: quit"
     else:
@@ -462,127 +635,321 @@ def _main(screen, root):
     curses.init_pair(2, curses.COLOR_CYAN, -1)
     curses.init_pair(3, curses.COLOR_YELLOW, -1)
 
-    items = scan_library(root)
+    if hasattr(screen, "timeout"):
+        screen.timeout(100)
+
+    events: Queue = Queue()
+    executor = ThreadPoolExecutor(max_workers=1)
+    active_future: Future | None = None
+    active_token = CancellationToken()
+    job_kind = "initial-scan"
+    job_message = "Scanning music library"
+    progress_current = None
+    progress_total = None
+    frame = 0
+    items = []
     selected_main = 0
     selected = 0
     offset = 0
-    status = f"Found {len(items)} library entries."
+    status = "Scanning music library"
     lines = _main_menu_lines()
     confirm_action = None
     active_group = None
+    search_query = None
+    job_action = None
 
-    while True:
-        if active_group is None:
-            entries = MAIN_MENU
-            menu_title = "MAIN MENU"
-        else:
-            entries = (*MENU_GROUPS[active_group], BACK_ENTRY)
-            menu_title = dict(MAIN_MENU)[active_group].upper()
-        _draw(
-            screen,
-            root,
-            entries,
-            selected,
-            lines,
-            offset,
-            status,
-            confirm_action,
-            menu_title,
-            (
-                "SECTIONS"
-                if active_group is None
-                else (
-                    "LIBRARY STATUS"
-                    if active_group == "overview"
-                    else "SECTION GUIDE"
-                )
-            ),
-        )
-        key = screen.getch()
+    def start_job(operation):
+        nonlocal active_future, active_token
+        token = CancellationToken()
 
-        if confirm_action:
-            if key in (ord("y"), ord("Y")):
-                action = confirm_action
-                confirm_action = None
-                lines = _action_lines(action, root, items)
-                if action in ("rename-apply", "rename-undo"):
-                    items = scan_library(root)
-                status = "Action completed."
-                offset = 0
-            elif key in (ord("n"), ord("N"), 27):
-                confirm_action = None
-                status = "Action cancelled."
-            continue
+        def progress_callback(message, current=None, total=None):
+            token.raise_if_cancelled()
+            events.put((message, current, total))
 
-        if key in (ord("q"), ord("Q")):
-            break
-        if active_group is not None and key in (
-            27,
-            curses.KEY_BACKSPACE,
-            8,
-            127,
-        ):
-            active_group = None
-            selected = selected_main
-            lines = _main_menu_lines()
-            offset = 0
-            continue
-        if key in (curses.KEY_UP, ord("k")):
-            selected = (selected - 1) % len(entries)
-            continue
-        if key in (curses.KEY_DOWN, ord("j")):
-            selected = (selected + 1) % len(entries)
-            continue
-        if active_group is not None and key == curses.KEY_PPAGE:
-            offset = max(0, offset - 8)
-            continue
-        if active_group is not None and key == curses.KEY_NPAGE:
-            offset += 8
-            continue
-        if key in (ord("r"), ord("R")):
-            items = scan_library(root)
-            status = f"Library refreshed: {len(items)} entries."
+        def run():
+            token.raise_if_cancelled()
+            result = operation(progress_callback)
+            token.raise_if_cancelled()
+            return result
+
+        active_token = token
+        active_future = executor.submit(run)
+
+    def handle_sigint(signum, frame):
+        if active_future is not None:
+            active_token.cancel()
+
+    previous_sigint_handler = signal.getsignal(signal.SIGINT)
+    signal.signal(signal.SIGINT, handle_sigint)
+    start_job(lambda progress: _scan_library(root, progress))
+
+    try:
+        while True:
             if active_group is None:
-                lines = _main_menu_lines()
-            elif active_group == "overview":
-                lines = _action_lines("dashboard", root, items)
-            offset = 0
-            continue
-        if key in (curses.KEY_ENTER, 10, 13):
-            action, label = entries[selected]
-            if active_group is None:
-                if action == "quit":
-                    break
-                selected_main = selected
-                active_group = action
-                selected = 0
-                offset = 0
-                if action == "overview":
-                    lines = _action_lines("dashboard", root, items)
-                else:
-                    lines = [
-                        f"Choose an option from {label}.",
-                        "",
-                        "Use the arrow keys to browse this section.",
-                    ]
-                status = f"{label} menu"
+                entries = MAIN_MENU
+                menu_title = "MAIN MENU"
+            else:
+                entries = (*MENU_GROUPS[active_group], BACK_ENTRY)
+                menu_title = dict(MAIN_MENU)[active_group].upper()
+            busy = active_future is not None
+            _draw(
+                screen,
+                root,
+                entries,
+                selected,
+                lines,
+                offset,
+                status,
+                confirm_action,
+                menu_title,
+                (
+                    "SECTIONS"
+                    if active_group is None
+                    else (
+                        "LIBRARY STATUS"
+                        if active_group == "overview"
+                        else "SECTION GUIDE"
+                    )
+                ),
+                busy=busy,
+                progress_current=progress_current,
+                progress_total=progress_total,
+                frame=frame,
+                search_query=search_query,
+            )
+            frame += 1
+
+            if busy:
+                while True:
+                    try:
+                        (
+                            job_message,
+                            progress_current,
+                            progress_total,
+                        ) = events.get_nowait()
+                    except Empty:
+                        break
+                    status = humanize_progress_message(job_message)
+
+                if active_future.done():
+                    try:
+                        result = active_future.result()
+                    except OperationCancelled as exc:
+                        lines = [
+                            "Operation stopped at a safe checkpoint.",
+                            str(exc),
+                        ]
+                        if job_action == "repair-apply":
+                            lines.append(
+                                "Completed tag changes are recorded in "
+                                ".dftr-last-repair.json."
+                            )
+                        elif job_action == "rename-apply":
+                            lines.append(
+                                "Completed folder changes are recorded in "
+                                ".dftr-last-rename.json."
+                            )
+                        elif job_action == "jellyfin-apply":
+                            lines.append(
+                                "Jellyfin may contain completed changes; "
+                                "inspect its collections before retrying."
+                            )
+                        status = "Action cancelled safely."
+                    except Exception as exc:
+                        lines = ["Task failed.", str(exc)]
+                        status = "Task failed"
+                    else:
+                        if job_kind in ("initial-scan", "refresh-scan"):
+                            items = result
+                            status = f"Found {len(items)} library entries."
+                            if job_kind == "initial-scan":
+                                lines = _main_menu_lines()
+                            elif active_group == "overview":
+                                lines = _action_lines(
+                                    "dashboard",
+                                    root,
+                                    items,
+                                )
+                        else:
+                            lines, refreshed_items = result
+                            if refreshed_items is not None:
+                                items = refreshed_items
+                            status = "Action completed."
+                            offset = 0
+                    active_future = None
+                    progress_current = None
+                    progress_total = None
+                    continue
+                key = screen.getch()
+                if key in (27, 3):
+                    active_token.cancel()
+                    status = "Stopping safely; finishing the current step..."
                 continue
-            if action == BACK_ACTION:
+
+            key = screen.getch()
+            if search_query is not None:
+                if key in (curses.KEY_ENTER, 10, 13):
+                    if not search_query.strip():
+                        status = "Type a search word before starting."
+                        continue
+                    query = search_query.strip()
+                    search_query = None
+                    job_kind = "action"
+                    job_action = "search"
+                    start_job(
+                        lambda progress: _action_job(
+                            "search",
+                            root,
+                            items,
+                            progress,
+                            query,
+                        )
+                    )
+                    status = f'Searching the library for "{query}"'
+                    progress_current = None
+                    progress_total = None
+                elif key in (27,):
+                    search_query = None
+                    status = "Search cancelled."
+                elif key in (
+                    curses.KEY_BACKSPACE,
+                    8,
+                    127,
+                ):
+                    search_query = search_query[:-1]
+                elif 0 <= key <= 0x10FFFF:
+                    character = chr(key)
+                    if character.isprintable() and len(search_query) < 160:
+                        search_query += character
+                continue
+
+            if confirm_action:
+                if key in (ord("y"), ord("Y")):
+                    action = confirm_action
+                    confirm_action = None
+
+                    def run_confirmed_action(progress):
+                        action_lines = _action_lines(
+                            action,
+                            root,
+                            items,
+                            progress,
+                        )
+                        refreshed = None
+                        if action in ("rename-apply", "rename-undo"):
+                            refreshed = _scan_library(
+                                root,
+                                progress,
+                            )
+                        return action_lines, refreshed
+
+                    job_kind = "action"
+                    job_action = action
+                    start_job(
+                        lambda progress: run_confirmed_action(progress)
+                    )
+                    job_message = f"Running {action.replace('-', ' ')}"
+                    status = job_message
+                    progress_current = None
+                    progress_total = None
+                elif key in (ord("n"), ord("N"), 27):
+                    confirm_action = None
+                    status = "Action cancelled."
+                continue
+
+            if key in (ord("q"), ord("Q")):
+                break
+            if active_group is not None and key in (
+                27,
+                curses.KEY_BACKSPACE,
+                8,
+                127,
+            ):
                 active_group = None
                 selected = selected_main
                 lines = _main_menu_lines()
                 offset = 0
-                status = "Main menu"
                 continue
-            if action in CONFIRM_ACTIONS:
-                confirm_action = action
-                status = (
-                    "This action changes files, tags, or the Jellyfin server."
+            if key in (curses.KEY_UP, ord("k")):
+                selected = (selected - 1) % len(entries)
+                continue
+            if key in (curses.KEY_DOWN, ord("j")):
+                selected = (selected + 1) % len(entries)
+                continue
+            if active_group is not None and key == curses.KEY_PPAGE:
+                offset = max(0, offset - 8)
+                continue
+            if active_group is not None and key == curses.KEY_NPAGE:
+                offset += 8
+                continue
+            if key in (ord("r"), ord("R")):
+                job_kind = "refresh-scan"
+                start_job(lambda progress: _scan_library(root, progress))
+                status = "Refreshing music library"
+                progress_current = None
+                progress_total = None
+                continue
+            if key in (curses.KEY_ENTER, 10, 13):
+                action, label = entries[selected]
+                if active_group is not None and action == "search":
+                    search_query = ""
+                    status = "Search songs, albums, artists, genres, and collections."
+                    continue
+                if active_group is None:
+                    if action == "quit":
+                        break
+                    selected_main = selected
+                    active_group = action
+                    selected = 0
+                    offset = 0
+                    if action == "overview":
+                        job_kind = "action"
+                        job_action = "dashboard"
+                        start_job(
+                            lambda progress: _action_job(
+                                "dashboard",
+                                root,
+                                items,
+                                progress,
+                            )
+                        )
+                        status = "Preparing dashboard"
+                    else:
+                        lines = [
+                            f"Choose an option from {label}.",
+                            "",
+                            "Use the arrow keys to browse this section.",
+                        ]
+                        status = f"{label} menu"
+                    continue
+                if action == BACK_ACTION:
+                    active_group = None
+                    selected = selected_main
+                    lines = _main_menu_lines()
+                    offset = 0
+                    status = "Main menu"
+                    continue
+                if action in CONFIRM_ACTIONS:
+                    confirm_action = action
+                    status = (
+                        "This action changes files, tags, or the Jellyfin server."
+                    )
+                    continue
+                job_kind = "action"
+                job_action = action
+                start_job(
+                    lambda progress: _action_job(
+                        action,
+                        root,
+                        items,
+                        progress,
+                    )
                 )
-                continue
-            lines = _action_lines(action, root, items)
-            status = label
-            offset = 0
+                status = f"Loading {label}"
+                offset = 0
+    finally:
+        signal.signal(signal.SIGINT, previous_sigint_handler)
+        executor.shutdown(wait=True)
 
 
 def _main_menu_lines():
@@ -590,13 +957,20 @@ def _main_menu_lines():
         "Choose a section from the main menu.",
         "",
         "Overview  Dashboard with library counts and quality score.",
-        "Library  Browse, diagnose and review audio quality.",
+        "Library  Search, browse, diagnose and review audio quality.",
         "Artwork  Find missing covers and fetch artwork.",
         "Collections  Inspect containers and publish to Jellyfin.",
         "Maintenance  Preview and apply tag or folder repairs.",
         "",
         "Changes require confirmation before they are applied.",
     ]
+
+
+def _action_job(action, root, items, progress, search_query=None):
+    return (
+        _action_lines(action, root, items, progress, search_query),
+        None,
+    )
 
 
 def run_tui(root: Path) -> None:

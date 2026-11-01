@@ -116,7 +116,18 @@ Enter to open its options. Press Escape or Backspace to return to the main
 menu. Scroll long reports with Page Up/Page Down, refresh the scan with `r`,
 and quit with `q`. Changes to tags, directories, or container metadata require
 a separate confirmation. The restrained playlist-style interface uses your
-terminal's default colors and background.
+terminal's default colors and background. Scans and long-running actions run
+in the background and show a live progress indicator and current operation.
+Command-line scans, cover lookups, downloads, and Jellyfin operations also
+show progress when run in an interactive terminal.
+Choose **Library → Search library** to find songs, albums, artists, genres, and
+local collections. Search is case-insensitive and checks audio tags as well as
+file and collection names; track-tag searches run in the background.
+During a TUI task, press `Esc` or `Ctrl-C` to stop at the next safe checkpoint.
+In CLI commands, `Ctrl-C` requests the same cooperative stop. The current
+network or file operation is allowed to finish; completed file changes remain
+available through their undo logs, while completed Jellyfin changes should be
+reviewed before retrying.
 
 ---
 

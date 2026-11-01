@@ -1,6 +1,9 @@
 import builtins
 import json
 import os
+import signal
+import sys
+from threading import current_thread, main_thread
 import typer
 
 from pathlib import Path
@@ -36,8 +39,78 @@ from dontfeartheripper.jellyfin import (
     JellyfinError,
     generate_jellyfin_collections,
 )
+from dontfeartheripper.progress import (
+    CancellationToken,
+    OperationCancelled,
+    humanize_progress_message,
+    report_progress,
+)
 
-app = typer.Typer(help="dontfeartheripper v0.1.6")
+app = typer.Typer(help="dontfeartheripper v0.1.7")
+
+
+def _with_progress(label, operation):
+    cancellation = CancellationToken()
+    previous_handler = None
+    can_handle_sigint = current_thread() is main_thread()
+    if can_handle_sigint:
+        previous_handler = signal.getsignal(signal.SIGINT)
+        signal.signal(
+            signal.SIGINT,
+            lambda signum, frame: cancellation.cancel(),
+        )
+
+    def run(progress=None, task=None):
+        def update(message, current=None, total=None):
+            cancellation.raise_if_cancelled()
+            if progress is not None:
+                progress.update(
+                    task,
+                    description=humanize_progress_message(message),
+                    total=total,
+                    completed=current or 0,
+                )
+
+        cancellation.raise_if_cancelled()
+        result = operation(update)
+        cancellation.raise_if_cancelled()
+        return result
+
+    try:
+        if not sys.stderr.isatty():
+            return run()
+
+        from rich.console import Console
+        from rich.progress import (
+            BarColumn,
+            Progress,
+            SpinnerColumn,
+            TaskProgressColumn,
+            TextColumn,
+        )
+
+        with Progress(
+            SpinnerColumn(),
+            TextColumn("{task.description}"),
+            BarColumn(),
+            TaskProgressColumn(),
+            console=Console(stderr=True),
+            transient=True,
+        ) as progress:
+            task = progress.add_task(label, total=None)
+            return run(progress, task)
+    except OperationCancelled as exc:
+        typer.echo(
+            "\nCancelled at a safe checkpoint. Changes already completed "
+            "were kept; use the available undo/rollback before retrying.",
+            err=True,
+        )
+        if str(exc) != "Operation cancelled safely.":
+            typer.echo(str(exc), err=True)
+        raise typer.Exit(130) from exc
+    finally:
+        if can_handle_sigint:
+            signal.signal(signal.SIGINT, previous_handler)
 
 
 @app.command()
@@ -49,7 +122,10 @@ def scan(
         help="Output scan as JSON",
     ),
 ) -> None:
-    items = scan_library(Path(path))
+    items = _with_progress(
+        "Scanning library",
+        lambda progress: scan_library(Path(path), progress),
+    )
 
     if json_output:
         report = {
@@ -119,7 +195,10 @@ def doctor(
         help="Output report as JSON",
     ),
 ) -> None:
-    items = scan_library(Path(path))
+    items = _with_progress(
+        "Scanning library",
+        lambda progress: scan_library(Path(path), progress),
+    )
 
     if json_output:
         report = {
@@ -178,7 +257,10 @@ def fix(
         help="Perform rename operations",
     ),
 ) -> None:
-    items = scan_library(Path(path))
+    items = _with_progress(
+        "Scanning library",
+        lambda progress: scan_library(Path(path), progress),
+    )
 
     plan = build_rename_plan(items)
     candidates = 0
@@ -208,7 +290,10 @@ def fix(
         return
 
     if yes:
-        result = apply_rename_plan(plan)
+        result = _with_progress(
+            "Renaming folders",
+            lambda progress: apply_rename_plan(plan, progress),
+        )
 
         print(f"Renamed: {result['renamed']}")
 
@@ -226,7 +311,10 @@ def undo() -> None:
         print("No rollback file found.")
         return
 
-    result = undo_renames()
+    result = _with_progress(
+        "Restoring folder names",
+        lambda progress: undo_renames(progress),
+    )
 
     for old_path, reason in result["skipped"]:
         print()
@@ -251,7 +339,10 @@ def stats(
         help="Output statistics as JSON",
     ),
 ) -> None:
-    items = scan_library(Path(path))
+    items = _with_progress(
+        "Scanning library",
+        lambda progress: scan_library(Path(path), progress),
+    )
     stats = build_stats(items)
 
     if json_output:
@@ -288,7 +379,10 @@ def quality(
         help="Output quality report as JSON",
     ),
 ) -> None:
-    items = scan_library(Path(path))
+    items = _with_progress(
+        "Scanning library",
+        lambda progress: scan_library(Path(path), progress),
+    )
     report = analyze_quality(items)
 
     if json_output:
@@ -331,8 +425,14 @@ def repair(
         help="Apply repairs",
     ),
 ) -> None:
-    items = scan_library(Path(path))
-    report = analyze_repairs(items)
+    items = _with_progress(
+        "Scanning library",
+        lambda progress: scan_library(Path(path), progress),
+    )
+    report = _with_progress(
+        "Analyzing tag repairs",
+        lambda progress: analyze_repairs(items, progress),
+    )
 
     if json_output:
         builtins.print(
@@ -368,7 +468,10 @@ def repair(
     print(f"Repairs: {len(repairs)}")
 
     if yes:
-        applied = apply_repairs(repairs)
+        applied = _with_progress(
+            "Updating audio tags",
+            lambda progress: apply_repairs(repairs, progress),
+        )
 
         print(f"Updated tags: {applied}")
         print("Rollback file: .dftr-last-repair.json")
@@ -379,7 +482,10 @@ def repair(
 
 @app.command("repair-undo")
 def repair_undo() -> None:
-    reverted = undo_repairs()
+    reverted = _with_progress(
+        "Restoring audio tags",
+        lambda progress: undo_repairs(progress),
+    )
 
     print()
     print(f"Reverted tags: {reverted}")
@@ -410,12 +516,19 @@ def cover(
     ),
 ) -> None:
 
-    items = scan_library(Path(path))
+    items = _with_progress(
+        "Scanning library",
+        lambda progress: scan_library(Path(path), progress),
+    )
 
     if yes:
-        preview_fetch(items)
-        report = execute_download_plan(
-            items
+        _with_progress(
+            "Looking up missing covers",
+            lambda progress: preview_fetch(items, progress),
+        )
+        report = _with_progress(
+            "Downloading covers",
+            lambda progress: execute_download_plan(items, progress),
         )
 
         if json_output:
@@ -495,7 +608,10 @@ def cover(
 
     if fetch:
 
-        results = preview_fetch(items)
+        results = _with_progress(
+            "Looking up missing covers",
+            lambda progress: preview_fetch(items, progress),
+        )
 
         if json_output:
 
@@ -544,7 +660,10 @@ def cover(
 
         return
 
-    report = analyze_covers(items)
+    report = _with_progress(
+        "Checking artwork",
+        lambda progress: analyze_covers(items, progress),
+    )
 
     if json_output:
         builtins.print(
@@ -579,8 +698,9 @@ def container(
     ),
 ) -> None:
 
-    containers = detect_containers(
-        Path(path)
+    containers = _with_progress(
+        "Finding containers",
+        lambda progress: detect_containers(Path(path), progress),
     )
 
     if not containers:
@@ -599,63 +719,43 @@ def container(
         f"Containers found: {len(containers)}"
     )
 
-    for item in containers:
-
+    for index, item in enumerate(containers, start=1):
         print()
         print(item["path"])
 
-        album_count = 0
-
         def _count(nodes):
+            return sum(
+                1
+                if node["type"] == "album"
+                else _count(node["children"])
+                for node in nodes
+            )
 
-            total = 0
-
-            for node in nodes:
-
-                if node["type"] == "album":
-                    total += 1
-
-                elif (
-                    node["type"]
-                    == "container"
-                ):
-                    total += _count(
-                        node["children"]
-                    )
-
-            return total
-
-        album_count = _count(
-            item["children"]
-        )
-
-        print(
-            f"  albums={album_count}"
-        )
-
-        target = (
-            item["path"]
-            / ".dftr-container.json"
-        )
-
-        print(
-            f"  metadata={target.name}"
-        )
+        album_count = _count(item["children"])
+        print(f"  albums={album_count}")
+        target = item["path"] / ".dftr-container.json"
+        print(f"  metadata={target.name}")
 
         if yes:
+            def write_files(progress):
+                report_progress(
+                    progress,
+                    f"Writing container {index}/{len(containers)}: "
+                    f"{item['path'].name}",
+                    index - 1,
+                    len(containers),
+                )
+                write_container_metadata(item)
+                write_collection_nfo(item)
+                write_container_poster(item)
+                report_progress(
+                    progress,
+                    f"Wrote container {item['path'].name}",
+                    index,
+                    len(containers),
+                )
 
-            write_container_metadata(
-                item
-            )
-
-            write_collection_nfo(
-                item
-            )
-
-            write_container_poster(
-                item
-            )
-
+            _with_progress("Writing container files", write_files)
             written += 1
 
     print()
@@ -734,16 +834,24 @@ def jellyfin_collections(
         )
 
     try:
-        report = generate_jellyfin_collections(
-            detect_containers(library_root),
-            jellyfin_url,
-            api_key,
-            library_root,
-            server_root=(
-                server_root
-                or os.environ.get("JELLYFIN_LIBRARY_ROOT")
-            ),
-            apply=yes,
+        def generate(progress):
+            containers = detect_containers(library_root, progress)
+            return generate_jellyfin_collections(
+                containers,
+                jellyfin_url,
+                api_key,
+                library_root,
+                server_root=(
+                    server_root
+                    or os.environ.get("JELLYFIN_LIBRARY_ROOT")
+                ),
+                apply=yes,
+                progress=progress,
+            )
+
+        report = _with_progress(
+            "Connecting to Jellyfin",
+            generate,
         )
     except JellyfinError as exc:
         typer.echo(f"Jellyfin error: {exc}", err=True)

@@ -3,6 +3,9 @@ import xml.etree.ElementTree as ET
 
 from pathlib import Path
 
+from .atomic import atomic_copy_file, atomic_write_text
+from .progress import ProgressCallback, report_progress
+
 
 CONTAINER_FILENAME = ".dftr-container.json"
 
@@ -19,10 +22,21 @@ AUDIO_EXTENSIONS = {
 }
 
 
-def has_audio(directory):
+def has_audio(
+    directory,
+    progress: ProgressCallback | None = None,
+):
+    visited = 0
 
     for item in directory.rglob("*"):
 
+        visited += 1
+        if visited == 1 or visited % 500 == 0:
+            report_progress(
+                progress,
+                f"Checking audio files: {directory.name}",
+                visited,
+            )
         if (
             item.is_file()
             and item.suffix.lower()
@@ -36,6 +50,7 @@ def has_audio(directory):
 def build_container_tree(
     directory,
     root=None,
+    progress: ProgressCallback | None = None,
 ):
 
     if root is None:
@@ -57,12 +72,12 @@ def build_container_tree(
             if p.is_dir()
         ]
 
-        audio = has_audio(child)
+        audio = has_audio(child, progress)
 
         nested_audio_dirs = [
             d
             for d in nested_subdirs
-            if has_audio(d)
+            if has_audio(d, progress)
         ]
 
         if nested_audio_dirs:
@@ -74,6 +89,7 @@ def build_container_tree(
                     "children": build_container_tree(
                         child,
                         root,
+                        progress,
                     ),
                 }
             )
@@ -113,9 +129,13 @@ def count_album_nodes(children):
 
     return total
 
-def detect_containers(root):
+def detect_containers(
+    root,
+    progress: ProgressCallback | None = None,
+):
 
     containers = []
+    inspected = 0
 
     for category in (
         "album",
@@ -133,9 +153,17 @@ def detect_containers(root):
             if not directory.is_dir():
                 continue
 
+            inspected += 1
+            if inspected == 1 or inspected % 25 == 0:
+                report_progress(
+                    progress,
+                    f"Inspecting containers: {directory}",
+                    inspected,
+                )
             tree = build_container_tree(
                 directory,
                 directory,
+                progress,
             )
 
             album_count = count_album_nodes(
@@ -166,6 +194,12 @@ def detect_containers(root):
             container
         )
 
+    report_progress(
+        progress,
+        f"Found {len(root_containers)} containers",
+        len(root_containers),
+        len(root_containers),
+    )
     return root_containers
 
 
@@ -441,11 +475,12 @@ def write_container_metadata(
         [container],
     )
 
-    target.write_text(
+    atomic_write_text(
+        target,
         json.dumps(
             metadata,
             indent=2,
-        )
+        ),
     )
 
     return target
@@ -453,7 +488,6 @@ def write_container_metadata(
 
 
 
-import shutil
 from .cover import find_existing_cover
 
 
@@ -461,6 +495,7 @@ from .cover import find_existing_cover
 def find_container_artwork_node(
     container_root,
     nodes,
+    progress: ProgressCallback | None = None,
 ):
 
     for node in nodes:
@@ -473,7 +508,8 @@ def find_container_artwork_node(
             )
 
             cover = find_existing_cover(
-                album_dir
+                album_dir,
+                progress,
             )
 
             if cover:
@@ -488,6 +524,7 @@ def find_container_artwork_node(
                 find_container_artwork_node(
                     container_root,
                     node["children"],
+                    progress,
                 )
             )
 
@@ -515,10 +552,7 @@ def write_container_poster(
     )
     target = container["path"] / f"poster{extension}"
 
-    shutil.copy2(
-        source,
-        target,
-    )
+    atomic_copy_file(source, target)
 
     return target
 
@@ -569,11 +603,11 @@ def write_collection_nfo(
         / "collection.nfo"
     )
 
-    target.write_text(
+    atomic_write_text(
+        target,
         build_collection_nfo(
             container
         ),
-        encoding="utf-8",
     )
 
     return target

@@ -11,6 +11,7 @@ sys.path.insert(
 from dontfeartheripper.tags2 import (
     TrackMetadata,
     detect_backend,
+    read_tags,
     SUPPORTED_AUDIO_FORMATS,
 )
 
@@ -63,3 +64,28 @@ def test_metadata_model():
         metadata.album
         == "Gravity X"
     )
+
+
+def test_read_tags_includes_genre_for_generic_supported_formats(
+    tmp_path,
+    monkeypatch,
+):
+    from dontfeartheripper import tags2
+
+    audio_path = tmp_path / "track.wav"
+    audio_path.touch()
+
+    class Audio:
+        tags = {
+            "artist": ["Example Artist"],
+            "album": ["Example Album"],
+            "title": ["Example Song"],
+            "genre": ["Jazz"],
+        }
+
+    monkeypatch.setattr(tags2, "MutagenFile", lambda path, easy: Audio())
+
+    metadata = read_tags(audio_path)
+
+    assert metadata.title == "Example Song"
+    assert metadata.genre == "Jazz"

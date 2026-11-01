@@ -18,3 +18,4 @@ class LibraryItem:
     suggested_name: str | None = None
     disc_number: int | None = None
     rename_collision: bool = False
+    genre: str | None = None

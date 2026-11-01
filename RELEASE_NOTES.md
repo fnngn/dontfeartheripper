@@ -1,3 +1,42 @@
+# dontfeartheripper v0.1.7
+
+## Highlights
+
+- Added live progress indicators for long-running scans, artwork lookups,
+  downloads, collection operations, and maintenance tasks.
+- Added cooperative, safe cancellation with `Esc` or `Ctrl-C` in the TUI and
+  `Ctrl-C` in CLI commands.
+- Added library search for songs, albums, artists, genres, and local
+  collections.
+- Improved recovery safety with atomic file writes and durable rollback logs
+  for tag repairs and folder renames.
+
+## Search and progress
+
+- Search is case-insensitive, checks audio tags and file/collection names,
+  and falls back to filenames when track titles are missing.
+- Read genre tags across supported audio formats, including WAV, APE, and WV.
+- Show clearer operation descriptions, determinate progress, and counters in
+  the TUI and interactive CLI.
+- Run long TUI actions in the background so the interface stays responsive.
+
+## Safe cancellation
+
+- Stop work at safe checkpoints rather than interrupting a file or network
+  operation midway.
+- Preserve rollback records as tag repairs and folder renames complete, so
+  completed changes can be undone after an interruption.
+- Write generated metadata and downloaded artwork atomically to avoid
+  half-written files.
+- Warn that completed Jellyfin API requests may already have changed server
+  state and should be reviewed before retrying.
+
+## Verification
+
+    97 tests passing
+
+---
+
 # dontfeartheripper v0.1.6
 
 ## Highlights

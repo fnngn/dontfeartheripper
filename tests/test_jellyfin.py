@@ -10,6 +10,7 @@ from dontfeartheripper.jellyfin import (
     build_jellyfin_collection_plan,
     generate_jellyfin_collections,
 )
+from dontfeartheripper.progress import OperationCancelled
 
 
 class FakeJellyfin:
@@ -396,6 +397,36 @@ def test_apply_synchronizes_existing_collection_members():
     ]
 
 
+def test_cancel_after_jellyfin_add_stops_before_removing_members():
+    client = FakeJellyfin()
+    plan = [
+        {
+            "name": "Existing Collection",
+            "collection_id": "collection-id",
+            "item_ids": ["keep", "add"],
+            "add_ids": ["add"],
+            "remove_ids": ["remove"],
+            "missing_paths": [],
+            "artwork_path": None,
+            "album_count": 2,
+            "matched_count": 2,
+        }
+    ]
+
+    def cancel_after_add(message, current, total):
+        if message == "Added albums to Existing Collection":
+            raise OperationCancelled("Stopped by test.")
+
+    with pytest.raises(OperationCancelled, match="inspect its collections"):
+        apply_jellyfin_collection_plan(
+            plan,
+            client,
+            cancel_after_add,
+        )
+
+    assert client.calls == [("add", "collection-id", ["add"])]
+
+
 def test_sync_preserves_existing_jellyfin_collection_poster(
     tmp_path,
 ):
@@ -452,7 +483,7 @@ def test_generator_defaults_to_plan_only(tmp_path, monkeypatch):
     client = FakeJellyfin()
     monkeypatch.setattr(
         "dontfeartheripper.jellyfin.JellyfinClient",
-        lambda *args: client,
+        lambda *args, **kwargs: client,
     )
     container = make_container(tmp_path)
     client.albums = [
@@ -644,6 +675,7 @@ def test_tui_groups_actions_and_esc_returns_to_main_menu(
         def __init__(self):
             self.drawn = []
             self.keys = iter((10, 10, 27, 10, ord("j"), 10, ord("q")))
+            self.busy = False
 
         def erase(self):
             pass
@@ -660,8 +692,17 @@ def test_tui_groups_actions_and_esc_returns_to_main_menu(
         def keypad(self, enabled):
             pass
 
+        def timeout(self, milliseconds):
+            self.busy = True
+
         def getch(self):
-            return next(self.keys)
+            import time
+
+            time.sleep(0.005)
+            try:
+                return next(self.keys)
+            except StopIteration:
+                return ord("q")
 
     monkeypatch.setattr(curses, "curs_set", lambda visibility: None)
     monkeypatch.setattr(curses, "start_color", lambda: None)
@@ -752,3 +793,4 @@ def test_tui_uses_default_background_and_playlist_layout(
     ]
     assert any("MAIN MENU" in text for _, _, text in screen.drawn)
     assert any("SECTIONS" in text for _, _, text in screen.drawn)
+    assert any("[#####" in text for _, _, text in screen.drawn)

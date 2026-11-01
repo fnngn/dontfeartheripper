@@ -1,5 +1,6 @@
 from dataclasses import dataclass
 
+from mutagen import File as MutagenFile
 from mutagen import MutagenError
 from mutagen.flac import FLAC
 from mutagen.easyid3 import EasyID3
@@ -77,6 +78,9 @@ def detect_backend(path):
     if suffix == ".opus":
         return "opus"
 
+    if suffix in (".wav", ".ape", ".wv"):
+        return "generic"
+
     return None
 
 
@@ -96,6 +100,9 @@ def read_flac(path):
         ),
         title=_first(
             audio.get("title")
+        ),
+        genre=_first(
+            audio.get("genre")
         ),
         source_format="flac",
     )
@@ -118,6 +125,9 @@ def read_mp3(path):
         title=_first(
             audio.get("title")
         ),
+        genre=_first(
+            audio.get("genre")
+        ),
         source_format="mp3",
     )
 
@@ -135,6 +145,9 @@ def read_mp4(path):
         ),
         title=_first(
             audio.get("\xa9nam")
+        ),
+        genre=_first(
+            audio.get("\xa9gen")
         ),
         source_format="mp4",
     )
@@ -157,6 +170,9 @@ def read_ogg(path):
         title=_first(
             audio.get("title")
         ),
+        genre=_first(
+            audio.get("genre")
+        ),
         source_format="ogg",
     )
 
@@ -178,7 +194,27 @@ def read_opus(path):
         title=_first(
             audio.get("title")
         ),
+        genre=_first(
+            audio.get("genre")
+        ),
         source_format="opus",
+    )
+
+
+def read_generic(path):
+    audio = MutagenFile(path, easy=True)
+    tags = getattr(audio, "tags", None)
+    if tags is None:
+        return TrackMetadata(
+            source_format=path.suffix.lstrip(".").lower() or "unknown"
+        )
+    return TrackMetadata(
+        artist=_first(tags.get("artist")),
+        albumartist=_first(tags.get("albumartist")),
+        album=_first(tags.get("album")),
+        title=_first(tags.get("title")),
+        genre=_first(tags.get("genre")),
+        source_format=path.suffix.lstrip(".").lower(),
     )
 
 
@@ -201,6 +237,9 @@ def read_tags(path):
 
         if backend == "opus":
             return read_opus(path)
+
+        if backend == "generic":
+            return read_generic(path)
     except (MutagenError, OSError, ValueError):
         return TrackMetadata(
             source_format=backend or "unknown"

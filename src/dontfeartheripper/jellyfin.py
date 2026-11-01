@@ -9,6 +9,8 @@ import requests
 from .container import (
     find_container_artwork_node,
 )
+from .progress import ProgressCallback, report_progress
+from .progress import OperationCancelled
 
 
 class JellyfinError(RuntimeError):
@@ -21,9 +23,11 @@ class JellyfinClient:
         base_url: str,
         api_key: str,
         session: requests.Session | None = None,
+        progress: ProgressCallback | None = None,
     ) -> None:
         self.base_url = base_url.rstrip("/") + "/"
         self.session = session or requests.Session()
+        self.progress = progress
         self.session.headers.update(
             {
                 "Authorization": (
@@ -82,6 +86,11 @@ class JellyfinClient:
         page_size = 1000
 
         while True:
+            report_progress(
+                self.progress,
+                f"Loading Jellyfin {item_type or 'collection members'}",
+                start_index,
+            )
             params: dict[str, Any] = {
                 "recursive": "true",
                 "fields": "Path",
@@ -119,6 +128,14 @@ class JellyfinClient:
                 payload.get("totalRecordCount"),
             )
             start_index += len(page)
+            report_progress(
+                self.progress,
+                f"Loaded {len(result)} Jellyfin {item_type or 'items'}",
+                min(start_index, total)
+                if isinstance(total, int)
+                else start_index,
+                total if isinstance(total, int) else None,
+            )
             if not page or len(page) < page_size:
                 break
             if isinstance(total, int) and start_index >= total:
@@ -365,6 +382,7 @@ def build_jellyfin_collection_plan(
     client: JellyfinClient,
     library_root: Path,
     server_root: str | None = None,
+    progress: ProgressCallback | None = None,
 ) -> list[dict[str, Any]]:
     names = [Path(container["path"]).name.casefold() for container in containers]
     if len(names) != len(set(names)):
@@ -391,11 +409,29 @@ def build_jellyfin_collection_plan(
             ).append(collection)
 
     plan = []
-    for container in containers:
+    total_containers = len(containers)
+    for container_index, container in enumerate(containers, start=1):
         name = Path(container["path"]).name
         item_ids = []
         missing_paths = []
-        for album_path in _album_directories(container):
+        album_directories = _album_directories(container)
+        report_progress(
+            progress,
+            f"Matching albums: {name}",
+            container_index - 1,
+            total_containers,
+        )
+        for album_index, album_path in enumerate(
+            album_directories,
+            start=1,
+        ):
+            if album_index == 1 or album_index % 10 == 0:
+                report_progress(
+                    progress,
+                    f"Matching {name}: {album_path.name}",
+                    album_index,
+                    len(album_directories),
+                )
             item_id = _match_album_id(
                 album_path,
                 library_root,
@@ -435,6 +471,7 @@ def build_jellyfin_collection_plan(
         artwork = find_container_artwork_node(
             Path(container["path"]),
             container["children"],
+            progress,
         )
         desired_ids = set(item_ids)
         plan.append(
@@ -462,71 +499,134 @@ def build_jellyfin_collection_plan(
                 "matched_count": len(desired_ids),
             }
         )
+        report_progress(
+            progress,
+            f"Planned {name}",
+            container_index,
+            total_containers,
+        )
     return plan
 
 
 def apply_jellyfin_collection_plan(
     plan: list[dict[str, Any]],
     client: JellyfinClient,
+    progress: ProgressCallback | None = None,
 ) -> list[dict[str, Any]]:
     results = []
-    for entry in plan:
-        item_ids = entry["item_ids"]
-        if not item_ids:
+    total = len(plan)
+    mutation_started = False
+    try:
+        for index, entry in enumerate(plan, start=1):
+            report_progress(
+                progress,
+                f"Publishing collection: {entry['name']}",
+                index - 1,
+                total,
+            )
+            item_ids = entry["item_ids"]
+            if not item_ids:
+                results.append(
+                    {
+                        "name": entry["name"],
+                        "status": "skipped",
+                        "reason": (
+                            "No Jellyfin music albums matched the local paths."
+                        ),
+                    }
+                )
+                continue
+
+            collection_id = entry["collection_id"]
+            if collection_id:
+                if entry["add_ids"]:
+                    mutation_started = True
+                if entry["remove_ids"]:
+                    mutation_started = True
+                client.add_items(
+                    collection_id,
+                    entry["add_ids"],
+                )
+                if entry["add_ids"]:
+                    report_progress(
+                        progress,
+                        f"Added albums to {entry['name']}",
+                        index - 1,
+                        total,
+                    )
+                client.remove_items(
+                    collection_id,
+                    entry["remove_ids"],
+                )
+                if entry["remove_ids"]:
+                    report_progress(
+                        progress,
+                        f"Removed stale albums from {entry['name']}",
+                        index - 1,
+                        total,
+                    )
+                status = "updated"
+            else:
+                mutation_started = True
+                collection_id = client.create_collection(
+                    entry["name"],
+                    item_ids,
+                )
+                report_progress(
+                    progress,
+                    f"Created collection {entry['name']}",
+                    index - 1,
+                    total,
+                )
+                status = "created"
+
+            artwork_path = entry["artwork_path"]
+            artwork_uploaded = bool(
+                artwork_path
+                and not (
+                    entry.get("collection_id")
+                    and entry.get("has_primary_image")
+                )
+            )
+            if artwork_uploaded:
+                mutation_started = True
+                client.upload_primary_image(
+                    collection_id,
+                    Path(artwork_path),
+                )
+                report_progress(
+                    progress,
+                    f"Uploaded artwork for {entry['name']}",
+                    index - 1,
+                    total,
+                )
+
             results.append(
                 {
                     "name": entry["name"],
-                    "status": "skipped",
-                    "reason": "No Jellyfin music albums matched the local paths.",
+                    "status": status,
+                    "collection_id": collection_id,
+                    "matched_count": len(item_ids),
+                    "missing_paths": entry["missing_paths"],
+                    "artwork_uploaded": artwork_uploaded,
+                    "existing_artwork_preserved": bool(
+                        entry.get("has_primary_image")
+                    ),
                 }
             )
-            continue
-
-        collection_id = entry["collection_id"]
-        if collection_id:
-            client.add_items(
-                collection_id,
-                entry["add_ids"],
+            report_progress(
+                progress,
+                f"Published {entry['name']}",
+                index,
+                total,
             )
-            client.remove_items(
-                collection_id,
-                entry["remove_ids"],
-            )
-            status = "updated"
-        else:
-            collection_id = client.create_collection(
-                entry["name"],
-                item_ids,
-            )
-            status = "created"
-
-        artwork_path = entry["artwork_path"]
-        artwork_uploaded = bool(
-            artwork_path
-            and not (
-                entry.get("collection_id")
-                and entry.get("has_primary_image")
-            )
-        )
-        if artwork_uploaded:
-            client.upload_primary_image(
-                collection_id,
-                Path(artwork_path),
-            )
-
-        results.append(
-            {
-                "name": entry["name"],
-                "status": status,
-                "collection_id": collection_id,
-                "matched_count": len(item_ids),
-                "missing_paths": entry["missing_paths"],
-                "artwork_uploaded": artwork_uploaded,
-                "existing_artwork_preserved": bool(
-                    entry.get("has_primary_image")
-                ),
-            }
-        )
+    except OperationCancelled as exc:
+        if mutation_started:
+            raise OperationCancelled(
+                "Jellyfin may contain completed changes; inspect its "
+                "collections before retrying."
+            ) from exc
+        raise
     return results
 
 
@@ -538,6 +638,7 @@ def generate_jellyfin_collections(
     *,
     server_root: str | None = None,
     apply: bool = False,
+    progress: ProgressCallback | None = None,
 ) -> dict[str, Any]:
     if not containers:
         return {
@@ -547,15 +648,20 @@ def generate_jellyfin_collections(
             "results": [],
         }
 
-    client = JellyfinClient(base_url, api_key)
+    client = JellyfinClient(
+        base_url,
+        api_key,
+        progress=progress,
+    )
     plan = build_jellyfin_collection_plan(
         containers,
         client,
         library_root,
         server_root,
+        progress,
     )
     results = (
-        apply_jellyfin_collection_plan(plan, client)
+        apply_jellyfin_collection_plan(plan, client, progress)
         if apply
         else []
     )

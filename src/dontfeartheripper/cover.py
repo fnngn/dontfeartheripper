@@ -1,8 +1,9 @@
+import os
 import re
 import sys
 from concurrent.futures import ThreadPoolExecutor, as_completed
-
 from pathlib import Path
+import tempfile
 
 from .musicbrainz import search_release
 from .cover_cache import (
@@ -14,6 +15,11 @@ from .cover_cache import (
 from .artwork_sources import (
     coverartarchive_cover,
     discogs_cover,
+)
+from .progress import (
+    OperationCancelled,
+    ProgressCallback,
+    report_progress,
 )
 
 
@@ -33,47 +39,56 @@ IMAGE_EXTENSIONS = (
 
 
 
-def find_existing_cover(directory):
+def find_existing_cover(directory, progress=None):
 
     #
     # Fast path:
     # root directory first
     #
 
+    directory = Path(directory)
     candidates = sorted(directory.iterdir())
 
-    #
-    # Fallback:
-    # search a few levels deep
-    #
-
-    candidates.extend(
-        sorted(
-            p
-            for p in directory.rglob("*")
-            if p.parent != directory
-        )
-    )
+    def is_cover(path):
+        if not path.is_file() or path.suffix.lower() not in IMAGE_EXTENSIONS:
+            return False
+        stem = path.stem.lower()
+        return any(pattern in stem for pattern in COVER_PATTERNS)
 
     for path in candidates:
+        if is_cover(path):
+            return path
 
-        if not path.is_file():
+    visited = 0
+    visited_directories = 0
+
+    def raise_walk_error(error):
+        raise error
+
+    for current, directories, filenames in os.walk(
+        directory,
+        onerror=raise_walk_error,
+    ):
+        visited_directories += 1
+        if visited_directories % 100 == 0:
+            report_progress(
+                progress,
+                f"Checking artwork folders: {directory.name}",
+                visited_directories,
+            )
+        directories.sort()
+        if Path(current) == directory:
             continue
-
-        suffix = (
-            path.suffix.lower()
-        )
-
-        if suffix not in IMAGE_EXTENSIONS:
-            continue
-
-        stem = (
-            path.stem.lower()
-        )
-
-        for pattern in COVER_PATTERNS:
-
-            if pattern in stem:
+        for filename in sorted(filenames):
+            visited += 1
+            if visited == 1 or visited % 500 == 0:
+                report_progress(
+                    progress,
+                    f"Checking artwork files: {directory.name}",
+                    visited,
+                )
+            path = Path(current) / filename
+            if is_cover(path):
                 return path
 
     return None
@@ -99,17 +114,29 @@ def normalize_album_name(name):
     )
 
 
-def analyze_covers(items):
+def analyze_covers(
+    items,
+    progress: ProgressCallback | None = None,
+):
     missing = []
     seen = set()
+    total = len(items)
 
-    for item in items:
+    for index, item in enumerate(items, start=1):
+        if index == 1 or index % 25 == 0 or index == total:
+            report_progress(
+                progress,
+                f"Checking artwork: {item.path.name}",
+                index,
+                total,
+            )
 
         if item.container_directory:
             continue
 
         existing = find_existing_cover(
-            item.path
+            item.path,
+            progress,
         )
 
         if existing:
@@ -200,16 +227,23 @@ def _fetch_candidate(cover):
 
 
 
-def preview_fetch(items):
+def preview_fetch(
+    items,
+    progress: ProgressCallback | None = None,
+):
 
     cache = load_cover_cache()
 
-    report = analyze_covers(items)
+    report = analyze_covers(items, progress)
 
     results = []
     missing = []
+    total = len(report["missing_covers"])
 
-    for cover in report["missing_covers"]:
+    for index, cover in enumerate(
+        report["missing_covers"],
+        start=1,
+    ):
 
         key = cache_key(
             cover["artist"],
@@ -228,6 +262,12 @@ def preview_fetch(items):
                         )
                     ),
                 }
+            )
+            report_progress(
+                progress,
+                f"Using cached match: {cover['album'] or 'unknown album'}",
+                index,
+                total,
             )
 
         else:
@@ -250,7 +290,6 @@ def preview_fetch(items):
                 for cover in missing
             }
 
-            total = len(futures)
             current = 0
 
             for future in as_completed(
@@ -278,12 +317,20 @@ def preview_fetch(items):
                     )
                 )
 
-                print(
-                    f"[{current}/{total}] "
-                    f"{album} -> {status}",
-                    file=sys.stderr,
-                    flush=True,
+                message = f"Cover lookup: {album} -> {status}"
+                report_progress(
+                    progress,
+                    message,
+                    current,
+                    len(futures),
                 )
+                if progress is None:
+                    print(
+                        f"[{current}/{len(futures)}] "
+                        f"{album} -> {status}",
+                        file=sys.stderr,
+                        flush=True,
+                    )
 
                 cache[key] = result
                 results.append(result)
@@ -291,10 +338,13 @@ def preview_fetch(items):
 
     return results
 
-def build_download_plan(items):
+def build_download_plan(
+    items,
+    progress: ProgressCallback | None = None,
+):
 
     cache = load_cover_cache()
-    candidates = analyze_covers(items)["missing_covers"]
+    candidates = analyze_covers(items, progress)["missing_covers"]
     plan = []
     seen = set()
 
@@ -335,15 +385,23 @@ def build_download_plan(items):
 import requests
 
 
-def execute_download_plan(items):
+def execute_download_plan(
+    items,
+    progress: ProgressCallback | None = None,
+):
 
-    report = build_download_plan(items)
+    report = (
+        build_download_plan(items)
+        if progress is None
+        else build_download_plan(items, progress)
+    )
 
     downloads = report["downloads"]
 
     results = []
 
     total = len(downloads)
+    report_progress(progress, "Preparing cover downloads", 0, total)
 
     for index, item in enumerate(
         downloads,
@@ -355,6 +413,12 @@ def execute_download_plan(items):
         )
 
         if target.exists():
+            report_progress(
+                progress,
+                f"Keeping existing cover: {item['album']}",
+                index,
+                total,
+            )
             results.append(
                 {
                     **item,
@@ -373,15 +437,34 @@ def execute_download_plan(items):
             )
 
             response.raise_for_status()
+            temporary_path = None
+            try:
+                with tempfile.NamedTemporaryFile(
+                    dir=target.parent,
+                    prefix=f".{target.name}.",
+                    delete=False,
+                ) as cover_file:
+                    temporary_path = Path(cover_file.name)
+                    cover_file.write(response.content)
+                    cover_file.flush()
+                    os.fsync(cover_file.fileno())
+                os.link(temporary_path, target)
+            finally:
+                if temporary_path is not None:
+                    temporary_path.unlink(missing_ok=True)
 
-            with target.open("xb") as cover_file:
-                cover_file.write(response.content)
-
-            print(
-                f"[{index}/{total}] "
-                f"{item['album']} -> OK",
-                file=sys.stderr,
-                flush=True,
+            if progress is None:
+                print(
+                    f"[{index}/{total}] "
+                    f"{item['album']} -> OK",
+                    file=sys.stderr,
+                    flush=True,
+                )
+            report_progress(
+                progress,
+                f"Downloaded cover: {item['album']}",
+                index,
+                total,
             )
 
             results.append(
@@ -393,7 +476,16 @@ def execute_download_plan(items):
                 }
             )
 
+        except OperationCancelled:
+            raise
+
         except FileExistsError:
+            report_progress(
+                progress,
+                f"Keeping existing cover: {item['album']}",
+                index,
+                total,
+            )
             results.append(
                 {
                     **item,
@@ -405,11 +497,18 @@ def execute_download_plan(items):
 
         except Exception as exc:
 
-            print(
-                f"[{index}/{total}] "
-                f"{item['album']} -> ERROR",
-                file=sys.stderr,
-                flush=True,
+            if progress is None:
+                print(
+                    f"[{index}/{total}] "
+                    f"{item['album']} -> ERROR",
+                    file=sys.stderr,
+                    flush=True,
+                )
+            report_progress(
+                progress,
+                f"Cover download failed: {item['album']}",
+                index,
+                total,
             )
 
             results.append(

@@ -5,6 +5,7 @@ from .toc import parse_toc
 from .tags2 import read_tags
 from .utils import sanitize_filename
 from .nfo import parse_album_nfo
+from .progress import ProgressCallback, report_progress
 
 
 def is_low_quality_metadata(artist: str | None, album: str | None) -> bool:
@@ -61,14 +62,23 @@ def has_audio_files(directory):
     return False
 
 
-def iter_album_dirs(root_directory):
+def iter_album_dirs(root_directory, progress=None):
 
     seen = set()
+    visited = 0
 
     for path in root_directory.rglob("*"):
 
         if not path.is_dir():
             continue
+
+        visited += 1
+        if visited == 1 or visited % 100 == 0:
+            report_progress(
+                progress,
+                f"Searching {path}",
+                visited,
+            )
 
         has_album_content = (
             has_audio_files(path)
@@ -115,8 +125,12 @@ def find_nearest_album_nfo(start):
 
 
 
-def scan_library(root: Path) -> list:
+def scan_library(
+    root: Path,
+    progress: ProgressCallback | None = None,
+) -> list:
     items = []
+    scanned = 0
 
     for category in ("album", "compilation", "soundtrack"):
         cat_path = root / category
@@ -124,8 +138,10 @@ def scan_library(root: Path) -> list:
         if not cat_path.exists():
             continue
 
+        report_progress(progress, f"Scanning {category} folders")
         for album in iter_album_dirs(
-            cat_path
+            cat_path,
+            progress,
         ):
 
             audio_files = sorted(
@@ -165,6 +181,7 @@ def scan_library(root: Path) -> list:
 
             album_name = None
             artist_name = None
+            genre = None
             track_count = len(audio_files)
             metadata_source = "unknown"
 
@@ -179,6 +196,7 @@ def scan_library(root: Path) -> list:
                     album_name = (
                         nfo["album"]
                     )
+                genre = nfo.get("genre")
 
                 metadata_source = "nfo"
 
@@ -269,6 +287,7 @@ def scan_library(root: Path) -> list:
                     cryptic=cryptic,
                     album_name=album_name,
                     artist_name=artist_name,
+                    genre=genre,
                     disc_number=disc_number,
                     container_directory=container_directory,
                     metadata_source=metadata_source,
@@ -276,6 +295,12 @@ def scan_library(root: Path) -> list:
                     suggested_name=suggested_name,
                     track_count=track_count,
                 )
+            )
+            scanned += 1
+            report_progress(
+                progress,
+                f"Read tags: {album.name}",
+                scanned,
             )
 
     seen = {}
@@ -296,4 +321,10 @@ def scan_library(root: Path) -> list:
         else:
             seen[collision_key] = item
 
+    report_progress(
+        progress,
+        f"Scan complete: {len(items)} library entries",
+        len(items),
+        len(items),
+    )
     return items

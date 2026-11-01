@@ -1,6 +1,9 @@
 import json
 from pathlib import Path
 
+from .atomic import atomic_write_text
+from .progress import ProgressCallback, report_progress
+
 
 UNDO_FILE = Path(".dftr-last-rename.json")
 
@@ -31,10 +34,20 @@ def build_rename_plan(items):
     return plan
 
 
-def apply_rename_plan(plan):
+def apply_rename_plan(
+    plan,
+    progress: ProgressCallback | None = None,
+):
     operations = []
+    total = len(plan)
 
-    for entry in plan:
+    for index, entry in enumerate(plan, start=1):
+        report_progress(
+            progress,
+            f"Renaming {entry['from'].name}",
+            index - 1,
+            total,
+        )
         if entry["skip_reason"]:
             continue
 
@@ -58,9 +71,15 @@ def apply_rename_plan(plan):
                 "to": str(new_path),
             }
         )
-        UNDO_FILE.write_text(
+        atomic_write_text(
+            UNDO_FILE,
             json.dumps(operations, indent=2),
-            encoding="utf-8",
+        )
+        report_progress(
+            progress,
+            f"Renamed {old_path.name}",
+            index,
+            total,
         )
 
     return {
@@ -69,7 +88,7 @@ def apply_rename_plan(plan):
     }
 
 
-def undo_renames():
+def undo_renames(progress: ProgressCallback | None = None):
     if not UNDO_FILE.exists():
         return {
             "reverted": 0,
@@ -83,10 +102,17 @@ def undo_renames():
     reverted = 0
     skipped = []
     reverted_operations = []
+    total = len(operations)
 
-    for entry in reversed(operations):
+    for index, entry in enumerate(reversed(operations), start=1):
         old_path = Path(entry["from"])
         new_path = Path(entry["to"])
+        report_progress(
+            progress,
+            f"Restoring {new_path.name}",
+            index - 1,
+            total,
+        )
 
         if not new_path.exists():
             skipped.append((new_path, "target missing"))
@@ -105,6 +131,12 @@ def undo_renames():
                 "from": str(new_path),
                 "to": str(old_path),
             }
+        )
+        report_progress(
+            progress,
+            f"Restored {old_path.name}",
+            index,
+            total,
         )
 
     return {
