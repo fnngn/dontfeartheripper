@@ -1,108 +1,56 @@
-# dontfeartheripper v0.1.2
+# dontfeartheripper v0.1.3
 
-## Highlights
+## Container Engine
 
-Recursive album discovery is now supported across the entire library.
+### Recursive Container Discovery
 
-Albums are no longer limited to the first directory level below:
+Supported container types:
 
-- album
-- compilation
-- soundtrack
+- artist_container
+- disc_container
+- edition_container
+- soundtrack_container
+- generic_container
 
-This significantly improves support for nested collections, soundtrack archives and artist containers.
+### Container Metadata
 
----
+Generated metadata now includes:
 
-## New Features
+- container_id
+- parent_container
+- container_type
+- album_count
+- container_depth
+- schema_version
+- generated_by
+- generated_version
 
-### Recursive Album Discovery
+### Jellyfin Collection Foundation
 
-Album directories are now discovered recursively.
+`dftr container --yes` now generates:
 
-Example:
+- .dftr-container.json
+- collection.nfo
+- poster.jpg
 
-    album/
-    └── Truckfighters/
-        ├── Gravity X
-        ├── Mania
-        ├── Phi
-        └── Fuzzsplit of the Century
+for detected root containers.
 
-All albums are detected automatically.
+### collection.nfo
 
----
+Generated fields:
 
-### Expanded Audio Format Detection
+- title
+- uniqueid
+- overview
+- type
+- albumcount
+- depth
+- dateadded
 
-Recursive detection now supports:
+### Container Artwork
 
-- FLAC
-- MP3
-- M4A
-- AAC
-- OGG
-- OPUS
-- WAV
-- APE
-- WV
+Container artwork is automatically generated from the first available child album cover.
 
----
+### Testing
 
-### Improved Cover Discovery
-
-Recursive scanning automatically expands cover detection and downloading.
-
-Additional cover artwork successfully discovered:
-
-- Gravity X
-- Mania
-- Phi
-- Fuzzsplit of the Century
-- Frostpunk Original Soundtrack
-
----
-
-## Existing Features
-
-### Library Analysis
-
-    dftr scan
-
-### Diagnostics
-
-    dftr doctor
-
-### Statistics
-
-    dftr stats
-
-### Quality Analysis
-
-    dftr quality
-
-### Metadata Repair
-
-    dftr repair
-    dftr repair --yes
-    dftr repair-undo
-
-### Directory Renaming
-
-    dftr fix
-    dftr fix --yes
-    dftr undo
-
-### Cover Art Management
-
-    dftr cover
-    dftr cover --fetch
-    dftr cover --plan
-    dftr cover --yes
-
----
-
-## Test Status
-
-    19 passed
-    0 failed
+31 tests passing.

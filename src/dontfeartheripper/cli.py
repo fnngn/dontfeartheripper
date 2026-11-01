@@ -22,11 +22,13 @@ from dontfeartheripper.repair import (
 from dontfeartheripper.container import (
     detect_containers,
     write_container_metadata,
+    write_collection_nfo,
+    write_container_poster,
 )
 
 UNDO_FILE = Path(".dftr-last-rename.json")
 
-app = typer.Typer(help="dontfeartheripper v0.1.2")
+app = typer.Typer(help="dontfeartheripper v0.1.3")
 
 
 @app.command()
@@ -668,6 +670,14 @@ def container(
         if yes:
 
             write_container_metadata(
+                item
+            )
+
+            write_collection_nfo(
+                item
+            )
+
+            write_container_poster(
                 item
             )
 

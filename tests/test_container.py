@@ -244,6 +244,7 @@ def test_only_root_container_returned(
 
 from dontfeartheripper.container import (
     build_container_metadata,
+    build_collection_nfo,
 )
 
 
@@ -612,3 +613,180 @@ def test_parent_container_reference(
 
         assert "container_id" in metadata
         assert "parent_container" in metadata
+
+
+def test_collection_nfo_extended_fields(
+    tmp_path,
+):
+
+    root = (
+        tmp_path
+        / "album"
+        / "Truckfighters"
+    )
+
+    (
+        root / "Gravity X"
+    ).mkdir(
+        parents=True
+    )
+
+    (
+        root / "Phi"
+    ).mkdir()
+
+    (
+        root / "Gravity X"
+        / "track.flac"
+    ).touch()
+
+    (
+        root / "Phi"
+        / "track.flac"
+    ).touch()
+
+    container = detect_containers(
+        tmp_path
+    )[0]
+
+    xml = build_collection_nfo(
+        container
+    )
+
+    assert "<uniqueid>" in xml
+    assert "<overview>" in xml
+    assert "<dateadded>" in xml
+
+    assert (
+        "artist_container"
+        in xml
+    )
+
+    assert (
+        "Truckfighters"
+        in xml
+    )
+
+
+def test_container_poster_created(
+    tmp_path,
+):
+
+    from dontfeartheripper.container import (
+        write_container_poster,
+    )
+
+    root = (
+        tmp_path
+        / "album"
+        / "Truckfighters"
+    )
+
+    album = (
+        root
+        / "Gravity X"
+    )
+
+    album.mkdir(
+        parents=True
+    )
+
+    (
+        root
+        / "Phi"
+    ).mkdir()
+
+    (
+        album
+        / "track.flac"
+    ).touch()
+
+    (
+        root
+        / "Phi"
+        / "track.flac"
+    ).touch()
+
+    (
+        album
+        / "cover.jpg"
+    ).write_bytes(
+        b"jpg"
+    )
+
+    container = detect_containers(
+        tmp_path
+    )[0]
+
+    target = write_container_poster(
+        container
+    )
+
+    assert target is not None
+
+    assert (
+        root
+        / "poster.jpg"
+    ).exists()
+
+
+def test_container_poster_created(
+    tmp_path,
+):
+
+    from dontfeartheripper.container import (
+        write_container_poster,
+    )
+
+    root = (
+        tmp_path
+        / "album"
+        / "Truckfighters"
+    )
+
+    album = (
+        root
+        / "Gravity X"
+    )
+
+    album.mkdir(
+        parents=True
+    )
+
+    (
+        root
+        / "Phi"
+    ).mkdir()
+
+    (
+        album
+        / "track.flac"
+    ).touch()
+
+    (
+        root
+        / "Phi"
+        / "track.flac"
+    ).touch()
+
+    (
+        album
+        / "cover.jpg"
+    ).write_bytes(
+        b"jpg"
+    )
+
+    container = detect_containers(
+        tmp_path
+    )[0]
+
+    target = write_container_poster(
+        container
+    )
+
+    assert target is not None
+
+    assert (
+        root
+        / "poster.jpg"
+    ).exists()
