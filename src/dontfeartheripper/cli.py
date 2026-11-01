@@ -19,6 +19,10 @@ from dontfeartheripper.repair import (
     apply_repairs,
     undo_repairs,
 )
+from dontfeartheripper.container import (
+    detect_containers,
+    write_container_metadata,
+)
 
 UNDO_FILE = Path(".dftr-last-rename.json")
 
@@ -587,6 +591,106 @@ def cover(
 
     print()
     print(f"Missing covers: {len(covers)}")
+
+@app.command()
+def container(
+    path: str = typer.Argument("."),
+    yes: bool = typer.Option(
+        False,
+        "--yes",
+        help="Write container metadata files",
+    ),
+) -> None:
+
+    containers = detect_containers(
+        Path(path)
+    )
+
+    if not containers:
+
+        print()
+        print(
+            "[green]No containers found.[/green]"
+        )
+
+        return
+
+    written = 0
+
+    print()
+    print(
+        f"Containers found: {len(containers)}"
+    )
+
+    for item in containers:
+
+        print()
+        print(item["path"])
+
+        album_count = 0
+
+        def _count(nodes):
+
+            total = 0
+
+            for node in nodes:
+
+                if node["type"] == "album":
+                    total += 1
+
+                elif (
+                    node["type"]
+                    == "container"
+                ):
+                    total += _count(
+                        node["children"]
+                    )
+
+            return total
+
+        album_count = _count(
+            item["children"]
+        )
+
+        print(
+            f"  albums={album_count}"
+        )
+
+        target = (
+            item["path"]
+            / ".dftr-container.json"
+        )
+
+        print(
+            f"  metadata={target.name}"
+        )
+
+        if yes:
+
+            write_container_metadata(
+                item
+            )
+
+            written += 1
+
+    print()
+
+    if yes:
+
+        print(
+            f"Metadata files written: {written}"
+        )
+
+    else:
+
+        print(
+            "Dry run only."
+        )
+
+        print(
+            "Run with --yes to create metadata."
+        )
+
 
 if __name__ == "__main__":
     app()
