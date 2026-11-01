@@ -1,10 +1,44 @@
-# dontfeartheripper v0.1.3
+# dontfeartheripper v0.1.4
+
+## Highlights
+
+v0.1.4 introduces the foundation for container-aware metadata recovery.
+
+The project now contains four major subsystems:
+
+- Recursive Library Discovery
+- Container Engine
+- Cover Management
+- Metadata Recovery Engine
+
+---
+
+## Metadata Recovery Engine
+
+New:
+
+- TrackMetadata abstraction
+- format-independent metadata model
+- recovery candidate builder
+- repair operation builder
+- container-aware recovery
+- container metadata context resolution
+
+Recovery priority:
+
+1. local metadata
+2. container metadata
+3. album.nfo
+4. TOC/CUE metadata
+5. MusicBrainz
+
+Local metadata always wins.
+
+---
 
 ## Container Engine
 
-dontfeartheripper now supports recursive container discovery and metadata generation.
-
-### Supported Container Types
+Supported container types:
 
 - artist_container
 - disc_container
@@ -12,55 +46,65 @@ dontfeartheripper now supports recursive container discovery and metadata genera
 - soundtrack_container
 - generic_container
 
-### Recursive Discovery
+Features:
 
-- nested containers
-- multi-level hierarchies
-- root container selection
-- parent/child relationships
-
-### Container Metadata
+- recursive container discovery
+- nested container discovery
+- root-container detection
+- container relationships
+- container metadata
+- jellyfin collection foundation
 
 Generated:
 
 - .dftr-container.json
+- collection.nfo
+- poster.jpg
 
-Metadata includes:
+Container metadata includes:
 
 - container_id
 - parent_container
 - container_type
 - album_count
 - container_depth
-- schema_version
-- generated_by
-- generated_version
 
-### Jellyfin Collection Foundation
+---
 
-Generated:
+## Cover Management
 
-- collection.nfo
-- poster.jpg
+- MusicBrainz integration
+- Cover Art Archive integration
+- recursive artwork lookup
+- download planning
+- automatic cover downloads
 
-collection.nfo includes:
+Commands:
 
-- title
-- uniqueid
-- overview
-- type
-- albumcount
-- depth
-- dateadded
+    dftr cover
+    dftr cover --fetch
+    dftr cover --plan
+    dftr cover --yes
 
-Container artwork is generated automatically from existing child album artwork.
+---
 
-### Commands
+## Recursive Discovery
 
-    dftr container
-    dftr container --yes
+Recursive library scanning now supports:
 
-### Test Status
+- FLAC
+- MP3
+- M4A
+- AAC
+- OGG
+- OPUS
+- WAV
+- APE
+- WV
 
-31 passed
-0 failed
+---
+
+## Testing
+
+    46 passed
+    0 failed

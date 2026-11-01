@@ -966,3 +966,72 @@ def test_container_quality_files_exist(
         root
         / "collection.nfo"
     ).exists()
+
+
+def test_nested_album_paths_are_root_relative(
+    tmp_path,
+):
+
+    root = (
+        tmp_path
+        / "soundtrack"
+        / "Cyberpunk 2077 Bonus Content"
+    )
+
+    (
+        root
+        / "soundtrack"
+        / "mp3"
+        / "cd1"
+    ).mkdir(
+        parents=True
+    )
+
+    (
+        root
+        / "soundtrack"
+        / "mp3"
+        / "cd2"
+    ).mkdir(
+        parents=True
+    )
+
+    (
+        root
+        / "soundtrack"
+        / "mp3"
+        / "cd1"
+        / "track.flac"
+    ).touch()
+
+    (
+        root
+        / "soundtrack"
+        / "mp3"
+        / "cd2"
+        / "track.flac"
+    ).touch()
+
+    containers = detect_containers(
+        tmp_path
+    )
+
+    cyberpunk = next(
+        c
+        for c in containers
+        if c["path"].name
+        == "Cyberpunk 2077 Bonus Content"
+    )
+
+    soundtrack = (
+        cyberpunk["children"][0]
+    )
+
+    mp3 = soundtrack["children"][0]
+
+    album = mp3["children"][0]
+
+    assert (
+        album["path"]
+        == "soundtrack/mp3/cd1"
+    )

@@ -32,7 +32,13 @@ def has_audio(directory):
     return False
 
 
-def build_container_tree(directory):
+def build_container_tree(
+    directory,
+    root=None,
+):
+
+    if root is None:
+        root = directory
 
     subdirs = [
         p
@@ -65,7 +71,8 @@ def build_container_tree(directory):
                     "type": "container",
                     "name": child.name,
                     "children": build_container_tree(
-                        child
+                        child,
+                        root,
                     ),
                 }
             )
@@ -78,7 +85,7 @@ def build_container_tree(directory):
                     "name": child.name,
                     "path": str(
                         child.relative_to(
-                            directory
+                            root
                         )
                     ),
                 }
@@ -126,7 +133,8 @@ def detect_containers(root):
                 continue
 
             tree = build_container_tree(
-                directory
+                directory,
+                directory,
             )
 
             album_count = count_album_nodes(
@@ -388,9 +396,12 @@ def write_container_metadata(
 
 
 import shutil
+from .cover import find_existing_cover
+
 
 
 def find_container_artwork_node(
+    container_root,
     nodes,
 ):
 
@@ -398,60 +409,43 @@ def find_container_artwork_node(
 
         if node["type"] == "album":
 
-            rel = node.get("path")
+            album_dir = (
+                container_root
+                / node["path"]
+            )
 
-            if rel:
-                return rel
+            cover = find_existing_cover(
+                album_dir
+            )
 
-        elif node["type"] == "container":
+            if cover:
+                return cover
 
-            result = (
+        elif (
+            node["type"]
+            == "container"
+        ):
+
+            cover = (
                 find_container_artwork_node(
-                    node["children"]
+                    container_root,
+                    node["children"],
                 )
             )
 
-            if result:
-                return result
+            if cover:
+                return cover
 
     return None
-
 
 def write_container_poster(
     container,
 ):
 
-    rel = find_container_artwork_node(
-        container["children"]
+    source = find_container_artwork_node(
+        container["path"],
+        container["children"],
     )
-
-    if not rel:
-        return None
-
-    album_dir = (
-        container["path"]
-        / rel
-    )
-
-    candidates = (
-        "cover.jpg",
-        "cover.jpeg",
-        "cover.png",
-        "folder.jpg",
-        "folder.png",
-    )
-
-    source = None
-
-    for name in candidates:
-
-        candidate = album_dir / name
-
-        if candidate.exists():
-
-            source = candidate
-
-            break
 
     if source is None:
         return None

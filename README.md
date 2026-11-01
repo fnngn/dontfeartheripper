@@ -1,8 +1,8 @@
 # dontfeartheripper
 
-Music library auditing, repair, artwork management and container discovery for large self-hosted collections.
+Music library auditing, metadata recovery, artwork management and container discovery for large self-hosted music collections.
 
-dontfeartheripper is designed for music collections that have grown over many years through:
+dontfeartheripper is designed for archives that have grown over many years through:
 
 - Exact Audio Copy (EAC)
 - CUERipper
@@ -12,14 +12,14 @@ dontfeartheripper is designed for music collections that have grown over many ye
 - artist discographies
 - multi-disc releases
 
-The project focuses on four areas:
+The project focuses on:
 
 - library analysis
 - metadata repair
-- artwork management
-- collection and container management
-
-All operations follow a dry-run-first workflow and are designed to be reversible whenever possible.
+- cover management
+- container discovery
+- collection metadata generation
+- Jellyfin preparation
 
 ---
 
@@ -30,39 +30,30 @@ All operations follow a dry-run-first workflow and are designed to be reversible
 - Python 3.14+
 - uv
 
-Verify uv:
-
-    uv --version
-
 ### Install
 
-Clone the repository:
+Clone:
 
     git clone https://github.com/fnngn/dontfeartheripper.git
 
-Enter the project directory:
+Enter repository:
 
     cd dontfeartheripper
 
-Run the installer:
+Install:
 
     ./install.sh
 
-Verify installation:
+Verify:
 
     dftr --help
 
 ### Update
 
-Update repository:
-
     git pull
-
-Reinstall:
-
     ./install.sh
 
-### Development Environment
+### Development
 
 Install dependencies:
 
@@ -76,7 +67,7 @@ Run tests:
 
 ## Supported Audio Formats
 
-Recursive album detection supports:
+Recursive discovery supports:
 
 - FLAC
 - MP3
@@ -88,114 +79,69 @@ Recursive album detection supports:
 - APE
 - WV
 
-Album discovery is recursive and no longer limited to a single directory level.
-
 ---
 
-## Library Analysis
+## Commands
 
-Scan a library:
+### Scan Library
 
     dftr scan /music
 
-JSON output:
+JSON:
 
     dftr scan /music --json
 
-Provides:
-
-- album detection
-- compilation detection
-- soundtrack detection
-- metadata source information
-- track counts
-- disc numbers
-- container information
-- rename candidates
-
 ---
 
-## Diagnostics
-
-Inspect library structure:
+### Diagnostics
 
     dftr doctor /music
 
-JSON output:
+JSON:
 
     dftr doctor /music --json
 
-Detects:
-
-- cryptic directory names
-- rename collisions
-- suspicious structures
-- container directories
-
 ---
 
-## Statistics
-
-Generate statistics:
+### Statistics
 
     dftr stats /music
 
-JSON output:
+JSON:
 
     dftr stats /music --json
 
-Includes:
-
-- albums
-- compilations
-- soundtracks
-- containers
-- cryptic directories
-- TOC usage
-- CUE usage
-- rename candidates
-- collisions
-
 ---
 
-## Quality Analysis
-
-Evaluate metadata quality:
+### Quality Analysis
 
     dftr quality /music
 
-JSON output:
+JSON:
 
     dftr quality /music --json
 
-Current quality checks:
+Checks:
 
 - missing artists
-- missing album names
+- missing albums
 - weak metadata sources
-- inconsistent compilation naming
+- inconsistent compilation metadata
 - container metadata issues
-
-Example:
-
-    Quality Score: 86%
-
-    WARN album/foo
-      missing_artist
 
 ---
 
-## Metadata Repair
+### Metadata Repair
 
-Preview repairs:
+Preview:
 
     dftr repair /music
 
-Apply repairs:
+Apply:
 
     dftr repair /music --yes
 
-Rollback:
+Undo:
 
     dftr repair-undo
 
@@ -204,22 +150,11 @@ Current repair rules:
 - missing_artist
 - various_uppercase
 - various_mixed
-
-Repairs are written directly into file metadata.
-
-Example:
-
-Before:
-
-    Artist: Unknown Artist
-
-After:
-
-    Artist: Loyft
+- recovery candidate generation
 
 ---
 
-## Directory Renaming
+### Directory Renaming
 
 Preview:
 
@@ -229,7 +164,7 @@ Apply:
 
     dftr fix /music --yes
 
-Rollback:
+Undo:
 
     dftr undo
 
@@ -237,28 +172,26 @@ Rollback:
 
 ## Cover Art Management
 
-### Find Missing Artwork
+Find missing artwork:
 
     dftr cover /music
 
-### Search Artwork Sources
+Lookup candidates:
 
     dftr cover /music --fetch
+
+Preview downloads:
+
+    dftr cover /music --plan
+
+Download artwork:
+
+    dftr cover /music --yes
 
 Sources:
 
 - MusicBrainz
 - Cover Art Archive
-
-### Preview Downloads
-
-    dftr cover /music --plan
-
-### Download Artwork
-
-    dftr cover /music --yes
-
-### Artwork Policy
 
 Recognized filenames:
 
@@ -268,15 +201,7 @@ Recognized filenames:
     artwork.*
     albumart.*
 
-Recognized formats:
-
-    jpg
-    jpeg
-    png
-
-Artwork discovery is recursive.
-
-Downloaded artwork is always normalized to:
+Downloaded artwork is normalized to:
 
     cover.jpg
 
@@ -291,48 +216,7 @@ Compatible with:
 
 ## Container Engine
 
-Version 0.1.3 introduces a dedicated container engine.
-
-The container engine models structures such as:
-
-### Artist Containers
-
-Example:
-
-    Truckfighters
-    ├── Gravity X
-    ├── Mania
-    ├── Phi
-    └── Fuzzsplit of the Century
-
-### Disc Containers
-
-Example:
-
-    Album
-    ├── CD1
-    ├── CD2
-    └── CD3
-
-### Edition Containers
-
-Example:
-
-    Frostpunk Original Soundtrack
-    ├── FLAC
-    └── WAV
-
-### Soundtrack Containers
-
-Example:
-
-    Cyberpunk 2077 Bonus Content
-    └── soundtrack
-        └── mp3
-
-### Detect Containers
-
-Preview:
+Detect containers:
 
     dftr container /music
 
@@ -340,7 +224,7 @@ Generate metadata:
 
     dftr container /music --yes
 
-### Supported Container Types
+Supported container types:
 
 - artist_container
 - disc_container
@@ -348,17 +232,13 @@ Generate metadata:
 - soundtrack_container
 - generic_container
 
-### Generated Files
-
-Container processing creates:
+Generated files:
 
     .dftr-container.json
     collection.nfo
     poster.jpg
 
-### Container Metadata
-
-Generated metadata includes:
+Metadata fields:
 
 - container_id
 - parent_container
@@ -366,29 +246,47 @@ Generated metadata includes:
 - album_count
 - container_depth
 - schema_version
-- generated_by
 - generated_version
 
-Example:
+Examples:
 
-    Truckfighters
-    ├── .dftr-container.json
-    ├── collection.nfo
-    ├── poster.jpg
-    ├── Gravity X
-    ├── Mania
-    ├── Phi
-    └── Fuzzsplit of the Century
+- artist discographies
+- soundtrack collections
+- edition collections
+- multi-disc releases
+
+---
+
+## Metadata Recovery Engine
+
+The metadata recovery engine is container-aware.
+
+Recovery priority:
+
+1. local metadata
+2. container metadata
+3. album.nfo
+4. TOC/CUE
+5. MusicBrainz
+
+Local metadata always wins.
+
+Core components:
+
+- TrackMetadata
+- Recovery Candidate Builder
+- Recovery Operations
+- Container Context Resolution
 
 ---
 
 ## Jellyfin Collection Foundation
 
-Container processing generates:
+Generated collection metadata:
 
     collection.nfo
 
-Current metadata fields:
+contains:
 
 - title
 - uniqueid
@@ -398,45 +296,9 @@ Current metadata fields:
 - depth
 - dateadded
 
-Container artwork:
+Generated artwork:
 
     poster.jpg
-
-is automatically derived from existing child album artwork.
-
-This provides the foundation for Jellyfin collection support.
-
----
-
-## Typical Workflow
-
-Inspect:
-
-    dftr doctor /music
-
-Evaluate quality:
-
-    dftr quality /music
-
-Repair metadata:
-
-    dftr repair /music --yes
-
-Download artwork:
-
-    dftr cover /music --yes
-
-Generate collection metadata:
-
-    dftr container /music --yes
-
-Preview renames:
-
-    dftr fix /music
-
-Apply renames:
-
-    dftr fix /music --yes
 
 ---
 
@@ -452,7 +314,7 @@ Available for:
     dftr cover --fetch --json
     dftr cover --plan --json
 
-All formats include:
+All outputs contain:
 
     {
       "schema_version": 1
@@ -468,14 +330,11 @@ Features:
 
 - dry-run by default
 - explicit --yes required
-- metadata repair rollback
 - rename rollback
-- collision protection
+- metadata rollback
 - download planning
+- collision protection
 - recursive discovery
-- container-aware processing
-
-No modifications are performed unless explicitly requested.
 
 ---
 
@@ -487,7 +346,7 @@ Run:
 
 Current status:
 
-    31 tests passing
+    46 tests passing
 
 ---
 
