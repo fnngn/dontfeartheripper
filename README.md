@@ -1,19 +1,96 @@
 # dontfeartheripper
 
-Repair, analyze and clean up large FLAC music collections.
+Music library auditing, repair, artwork management and container discovery for large self-hosted collections.
 
-dontfeartheripper was created for music libraries that have grown over many years through Exact Audio Copy (EAC), CUERipper, Whipper and similar ripping tools.
+dontfeartheripper is designed for music libraries that have grown over many years through:
 
-These collections often contain:
+- Exact Audio Copy (EAC)
+- CUERipper
+- Whipper
+- Bandcamp downloads
+- soundtrack archives
+- discographies
+- multi-disc releases
 
-- cryptic directory names
-- incomplete metadata
-- broken compilation tags
-- missing artist information
-- duplicate naming conventions
-- mixed metadata quality
+The goal is simple:
 
-dontfeartheripper helps identify these issues, repair common metadata problems and safely rename albums while keeping all changes reversible.
+- discover problems
+- repair metadata
+- standardize artwork
+- generate collection metadata
+- prepare libraries for Jellyfin
+- keep operations reversible
+
+---
+
+## Installation
+
+### Requirements
+
+- Python 3.14+
+- uv
+
+Install uv:
+
+    curl -LsSf https://astral.sh/uv/install.sh | sh
+
+Verify:
+
+    uv --version
+
+### Install from Source
+
+Clone the repository:
+
+    git clone https://github.com/fnngn/dontfeartheripper.git
+
+Enter the project directory:
+
+    cd dontfeartheripper
+
+Install:
+
+    uv tool install . --force
+
+Verify:
+
+    dftr --help
+
+### Updating
+
+Update repository:
+
+    git pull
+
+Reinstall:
+
+    uv tool install . --force
+
+### Development
+
+Install development environment:
+
+    uv sync
+
+Run tests:
+
+    uv run pytest -v
+
+---
+
+## Supported Audio Formats
+
+Recursive album discovery supports:
+
+- FLAC
+- MP3
+- M4A
+- AAC
+- OGG
+- OPUS
+- WAV
+- APE
+- WV
 
 ---
 
@@ -21,32 +98,42 @@ dontfeartheripper helps identify these issues, repair common metadata problems a
 
 ### Library Analysis
 
-Inspect albums, compilations and soundtracks.
+Scan music libraries.
 
     dftr scan /music
 
-JSON export:
+JSON output:
 
     dftr scan /music --json
+
+Detects:
+
+- albums
+- compilations
+- soundtracks
+- metadata sources
+- disc numbers
+- cryptic names
+- rename candidates
 
 ---
 
 ### Diagnostics
 
-Detect structural and metadata problems.
-
-Examples:
-
-- cryptic directory names
-- missing metadata
-- rename collisions
-- suspicious directory structures
+Inspect library structure.
 
     dftr doctor /music
 
-JSON export:
+JSON output:
 
     dftr doctor /music --json
+
+Detects:
+
+- cryptic directory names
+- rename collisions
+- suspicious structures
+- container directories
 
 ---
 
@@ -56,9 +143,19 @@ Generate collection statistics.
 
     dftr stats /music
 
-JSON export:
+JSON output:
 
     dftr stats /music --json
+
+Includes:
+
+- album count
+- compilation count
+- soundtrack count
+- TOC usage
+- CUE usage
+- rename candidates
+- collisions
 
 ---
 
@@ -68,97 +165,27 @@ Evaluate metadata quality.
 
     dftr quality /music
 
-Example:
-
-    Quality Score: 86%
-
-    WARN album/foo
-      missing_artist
-
-    WARN compilation/bar
-      inconsistent_artist_naming
-
-JSON export:
+JSON output:
 
     dftr quality /music --json
 
-Current quality checks:
+Current checks:
 
 - missing artists
-- missing album names
-- low-quality metadata
-- inconsistent compilation naming
-- container metadata issues
+- missing albums
+- weak metadata sources
+- inconsistent compilation metadata
+- container-related issues
 
 ---
 
----
-
-### Cover Art Management
-
-Find missing cover art:
-
-    dftr cover /music
-
-Search MusicBrainz and Cover Art Archive:
-
-    dftr cover /music --fetch
-
-Preview cover downloads:
-
-    dftr cover /music --plan
-
-Download cover art:
-
-    dftr cover /music --yes
-
-Features:
-
-- MusicBrainz release matching
-- Cover Art Archive integration
-- download planning
-- progress reporting
-- error handling
-- JSON output
-- Jellyfin-compatible cover naming
-
-Cover policy:
-
-Recognized filenames:
-
-    cover.*
-    folder.*
-    front.*
-    artwork.*
-    albumart.*
-
-Supported formats:
-
-    jpg
-    jpeg
-    png
-
-Artwork detection is recursive.
-
-Downloaded artwork is normalized to:
-
-    cover.jpg
-
-This is compatible with:
-
-- Jellyfin
-- Plex
-- Kodi
-- Navidrome
-
----
 ### Metadata Repair
 
-Preview repairs:
+Preview:
 
     dftr repair /music
 
-Apply repairs:
+Apply:
 
     dftr repair /music --yes
 
@@ -172,18 +199,7 @@ Current repair rules:
 - various_uppercase
 - various_mixed
 
-Example:
-
-Before:
-
-    Artist: Unknown Artist
-    Folder: Loyft - Rage of the Hedgehog
-
-After:
-
-    Artist: Loyft
-
-Repairs are performed directly on FLAC tags.
+Repairs are written directly into file metadata.
 
 ---
 
@@ -203,64 +219,171 @@ Rollback:
 
 ---
 
+## Cover Art Management
 
-## Recursive Album Discovery
-
-dontfeartheripper now scans album directories recursively.
-
-Supported audio formats:
-
-- FLAC
-- MP3
-- M4A
-- AAC
-- OGG
-- OPUS
-- WAV
-- APE
-- WV
-
-Nested album structures, soundtrack collections and artist containers are automatically discovered.
-
-## Typical Workflow
-
-Inspect the library:
-
-    dftr doctor /music
-
-Evaluate metadata quality:
-
-    dftr quality /music
-
-Preview repairs:
-
-    dftr repair /music
-
-Apply repairs:
-
-    dftr repair /music --yes
-
-Find missing cover art:
+### Find Missing Artwork
 
     dftr cover /music
 
-Lookup cover candidates:
+### Search Sources
 
     dftr cover /music --fetch
 
-Preview downloads:
+Sources:
+
+- MusicBrainz
+- Cover Art Archive
+
+### Preview Downloads
 
     dftr cover /music --plan
+
+### Download Artwork
+
+    dftr cover /music --yes
+
+### Artwork Policy
+
+Recognized filenames:
+
+    cover.*
+    folder.*
+    front.*
+    artwork.*
+    albumart.*
+
+Supported image formats:
+
+    jpg
+    jpeg
+    png
+
+Recursive artwork discovery is supported.
+
+Downloaded artwork is normalized to:
+
+    cover.jpg
+
+Compatible with:
+
+- Jellyfin
+- Plex
+- Kodi
+- Navidrome
+
+---
+
+## Container Engine
+
+Version 0.1.3 introduces recursive container discovery.
+
+Supported scenarios:
+
+- artist discographies
+- soundtrack collections
+- multi-disc releases
+- edition collections
+- nested container structures
+
+### Detect Containers
+
+Preview:
+
+    dftr container /music
+
+Generate metadata:
+
+    dftr container /music --yes
+
+### Container Types
+
+- artist_container
+- disc_container
+- edition_container
+- soundtrack_container
+- generic_container
+
+### Generated Files
+
+Container processing generates:
+
+    .dftr-container.json
+    collection.nfo
+    poster.jpg
+
+### Container Metadata
+
+Generated metadata includes:
+
+- container_id
+- parent_container
+- container_type
+- album_count
+- container_depth
+- schema_version
+- generated_by
+- generated_version
+
+Example:
+
+    Truckfighters
+    ├── .dftr-container.json
+    ├── collection.nfo
+    ├── poster.jpg
+    ├── Gravity X
+    ├── Mania
+    ├── Phi
+    └── Fuzzsplit of the Century
+
+---
+
+## Jellyfin Collection Foundation
+
+Container generation creates:
+
+    collection.nfo
+
+Fields:
+
+- title
+- uniqueid
+- overview
+- type
+- albumcount
+- depth
+- dateadded
+
+Container artwork:
+
+    poster.jpg
+
+is generated automatically from existing child album artwork.
+
+---
+
+## Typical Workflow
+
+Inspect:
+
+    dftr doctor /music
+
+Evaluate quality:
+
+    dftr quality /music
+
+Repair metadata:
+
+    dftr repair /music --yes
 
 Download cover art:
 
     dftr cover /music --yes
 
-Verify improvements:
+Generate collection metadata:
 
-    dftr quality /music
+    dftr container /music --yes
 
-Preview rename operations:
+Preview renames:
 
     dftr fix /music
 
@@ -270,9 +393,9 @@ Apply renames:
 
 ---
 
-## JSON API
+## JSON Output
 
-Machine-readable output is available for:
+Available for:
 
     dftr scan --json
     dftr doctor --json
@@ -281,16 +404,12 @@ Machine-readable output is available for:
     dftr repair --json
     dftr cover --fetch --json
     dftr cover --plan --json
-    dftr cover --fetch --json
-    dftr cover --plan --json
 
-All JSON outputs include:
+All outputs include:
 
     {
       "schema_version": 1
     }
-
-for future schema evolution.
 
 ---
 
@@ -298,34 +417,29 @@ for future schema evolution.
 
 dontfeartheripper follows a dry-run-first workflow.
 
-Features include:
+Features:
 
 - dry-run by default
 - explicit --yes required
 - metadata repair rollback
 - rename rollback
-- collision detection
-- container protection
+- collision protection
+- download planning
+- container-aware processing
 
-Nothing is modified unless explicitly requested.
+No modifications are performed unless explicitly requested.
 
 ---
 
-## Running Tests
+## Testing
+
+Run:
 
     uv run pytest -v
 
 Current status:
 
     31 tests passing
-
----
-
-## Requirements
-
-- Python 3.14+
-- FLAC-based music collection
-- Metadata generated by EAC, CUERipper, Whipper or similar software
 
 ---
 
