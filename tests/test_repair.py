@@ -161,3 +161,58 @@ def test_recovery_repair_generation():
 
     assert "artist" in fields
     assert "album" in fields
+
+
+def test_find_nearest_album_nfo(
+    tmp_path,
+):
+
+    from dontfeartheripper.repair import (
+        find_nearest_album_nfo,
+    )
+
+    root = (
+        tmp_path
+        / "soundtrack"
+        / "Cyberpunk"
+        / "soundtrack"
+        / "mp3"
+    )
+
+    (
+        root
+        / "album.nfo"
+    ).mkdir(
+        parents=True,
+        exist_ok=True,
+    ) if False else None
+
+    root.mkdir(
+        parents=True,
+        exist_ok=True,
+    )
+
+    (
+        root
+        / "album.nfo"
+    ).write_text(
+        "<album></album>"
+    )
+
+    (
+        root
+        / "cd1"
+    ).mkdir()
+
+    result = (
+        find_nearest_album_nfo(
+            root / "cd1"
+        )
+    )
+
+    assert result is not None
+
+    assert (
+        result.name
+        == "album.nfo"
+    )

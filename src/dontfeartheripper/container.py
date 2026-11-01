@@ -224,9 +224,15 @@ def container_depth(children):
     return depth
 
 
+
 def classify_container(container):
 
-    name = container["path"].name.lower()
+    name = (
+        container["path"]
+        .name
+        .lower()
+        .strip()
+    )
 
     children = container["children"]
 
@@ -235,32 +241,87 @@ def classify_container(container):
         for child in children
     ]
 
+    DISC_NAMES = {
+        "cd1",
+        "cd2",
+        "cd3",
+        "cd4",
+        "disc1",
+        "disc2",
+        "disc3",
+        "disc4",
+        "disc 1",
+        "disc 2",
+        "disc 3",
+        "disc 4",
+    }
+
+    FORMAT_NAMES = {
+        "flac",
+        "wav",
+        "mp3",
+        "aac",
+        "ogg",
+        "opus",
+        "m4a",
+        "ape",
+        "wv",
+    }
+
+    ALBUM_EDITION_HINTS = (
+        "super deluxe",
+        "deluxe",
+        "expanded edition",
+        "collector",
+        "anniversary edition",
+        "box set",
+    )
+
+    #
+    # Disc container
+    #
+
     if any(
-        x.startswith("cd")
-        for x in child_names
+        disc_name in child_names
+        for disc_name in DISC_NAMES
     ):
         return "disc_container"
 
-    if set(child_names).issubset(
-        {
-            "flac",
-            "wav",
-            "mp3",
-            "aac",
-            "ogg",
-            "opus",
-            "m4a",
-            "ape",
-            "wv",
-        }
+    #
+    # Format container
+    #
+
+    if (
+        child_names
+        and set(child_names).issubset(
+            FORMAT_NAMES
+        )
     ):
-        return "edition_container"
+        return "format_container"
+
+    #
+    # Album container
+    #
+
+    if any(
+        hint in name
+        for hint in ALBUM_EDITION_HINTS
+    ):
+        return "album_container"
+
+    #
+    # Soundtrack container
+    #
 
     if (
         "soundtrack" in name
         or "ost" in name
     ):
         return "soundtrack_container"
+
+    #
+    # Artist container
+    #
 
     album_count = count_album_nodes(
         children
@@ -270,10 +331,6 @@ def classify_container(container):
         return "artist_container"
 
     return "generic_container"
-
-
-
-
 
 def make_container_id(path):
 

@@ -390,7 +390,7 @@ def test_edition_container_type(
 
     assert (
         metadata["container_type"]
-        == "edition_container"
+        == "format_container"
     )
 
 
@@ -1034,4 +1034,148 @@ def test_nested_album_paths_are_root_relative(
     assert (
         album["path"]
         == "soundtrack/mp3/cd1"
+    )
+
+
+def test_super_deluxe_is_disc_container(
+    tmp_path,
+):
+
+    root = (
+        tmp_path
+        / "compilation"
+        / "Tea For The Tillerman (Super Deluxe)"
+    )
+
+    (
+        root
+        / "Disc 1"
+    ).mkdir(
+        parents=True
+    )
+
+    (
+        root
+        / "Disc 2"
+    ).mkdir()
+
+    (
+        root
+        / "Disc 1"
+        / "track.flac"
+    ).touch()
+
+    (
+        root
+        / "Disc 2"
+        / "track.flac"
+    ).touch()
+
+    container = detect_containers(
+        tmp_path
+    )[0]
+
+    metadata = build_container_metadata(
+        container
+    )
+
+    assert (
+        metadata["container_type"]
+        == "disc_container"
+    )
+
+
+def test_super_deluxe_is_album_container(
+    tmp_path,
+):
+
+    root = (
+        tmp_path
+        / "compilation"
+        / "Tea For The Tillerman (Super Deluxe)"
+    )
+
+    (
+        root
+        / "Disc 1"
+    ).mkdir(
+        parents=True
+    )
+
+    (
+        root
+        / "Disc 2"
+    ).mkdir()
+
+    (
+        root
+        / "Disc 1"
+        / "track.flac"
+    ).touch()
+
+    (
+        root
+        / "Disc 2"
+        / "track.flac"
+    ).touch()
+
+    container = detect_containers(
+        tmp_path
+    )[0]
+
+    metadata = build_container_metadata(
+        container
+    )
+
+    assert (
+        metadata["container_type"]
+        == "disc_container"
+    )
+
+
+def test_flac_wav_is_format_container(
+    tmp_path,
+):
+
+    root = (
+        tmp_path
+        / "soundtrack"
+        / "Example OST"
+    )
+
+    (
+        root
+        / "FLAC"
+    ).mkdir(
+        parents=True
+    )
+
+    (
+        root
+        / "WAV"
+    ).mkdir()
+
+    (
+        root
+        / "FLAC"
+        / "track.flac"
+    ).touch()
+
+    (
+        root
+        / "WAV"
+        / "track.wav"
+    ).touch()
+
+    container = detect_containers(
+        tmp_path
+    )[0]
+
+    metadata = build_container_metadata(
+        container
+    )
+
+    assert (
+        metadata["container_type"]
+        == "format_container"
     )

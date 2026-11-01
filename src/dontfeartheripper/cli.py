@@ -28,7 +28,7 @@ from dontfeartheripper.container import (
 
 UNDO_FILE = Path(".dftr-last-rename.json")
 
-app = typer.Typer(help="dontfeartheripper v0.1.3")
+app = typer.Typer(help="dontfeartheripper v0.1.5")
 
 
 @app.command()

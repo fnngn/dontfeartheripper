@@ -92,6 +92,29 @@ def iter_album_dirs(root_directory):
         yield path
 
 
+
+
+def find_nearest_album_nfo(start):
+
+    current = Path(start)
+
+    for directory in (
+        current,
+        *current.parents,
+    ):
+
+        candidate = (
+            directory
+            / "album.nfo"
+        )
+
+        if candidate.exists():
+            return candidate
+
+    return None
+
+
+
 def scan_library(root: Path) -> list:
     items = []
 
@@ -116,9 +139,19 @@ def scan_library(root: Path) -> list:
 
             disc_number = None
 
-            nfo_file = album / "album.nfo"
-            if nfo_file.exists():
-                nfo = parse_album_nfo(nfo_file)
+            nfo_file = find_nearest_album_nfo(
+                album
+            )
+
+            nfo = None
+
+            if (
+                nfo_file
+                and nfo_file.exists()
+            ):
+                nfo = parse_album_nfo(
+                    nfo_file
+                )
                 disc_number = nfo["disc"]
 
             cryptic = "~" in album.name
@@ -127,6 +160,20 @@ def scan_library(root: Path) -> list:
             artist_name = None
             track_count = 0
             metadata_source = "unknown"
+
+            if nfo:
+
+                if nfo.get("artist"):
+                    artist_name = (
+                        nfo["artist"]
+                    )
+
+                if nfo.get("album"):
+                    album_name = (
+                        nfo["album"]
+                    )
+
+                metadata_source = "nfo"
 
             container_directory = (
                 len(flacs) == 0 and len(subdirs) > 0

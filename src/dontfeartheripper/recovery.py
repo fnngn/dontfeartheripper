@@ -32,11 +32,11 @@ def build_recovery_candidate(
 
     candidate.artist = first_value(
         local_metadata.artist,
-        container_metadata.get("artist")
-        if container_metadata
-        else None,
         nfo_metadata.get("artist")
         if nfo_metadata
+        else None,
+        container_metadata.get("artist")
+        if container_metadata
         else None,
         toc_metadata.get("artist")
         if toc_metadata
@@ -48,11 +48,11 @@ def build_recovery_candidate(
 
     candidate.album = first_value(
         local_metadata.album,
-        container_metadata.get("album")
-        if container_metadata
-        else None,
         nfo_metadata.get("album")
         if nfo_metadata
+        else None,
+        container_metadata.get("album")
+        if container_metadata
         else None,
         toc_metadata.get("album")
         if toc_metadata
@@ -64,6 +64,9 @@ def build_recovery_candidate(
 
     candidate.albumartist = first_value(
         local_metadata.albumartist,
+        nfo_metadata.get("albumartist")
+        if nfo_metadata
+        else None,
         container_metadata.get("albumartist")
         if container_metadata
         else None,
@@ -122,6 +125,58 @@ def build_repair_operations(
                 "old": original.album,
                 "new": candidate.album,
                 "rule": "metadata_recovery",
+            }
+        )
+
+    return repairs
+
+
+RECOVERABLE_FIELDS = (
+    "artist",
+    "albumartist",
+    "album",
+    "title",
+    "track",
+    "disc",
+    "genre",
+    "year",
+)
+
+
+def build_full_repair_operations(
+    original,
+    candidate,
+):
+
+    repairs = []
+
+    for field in RECOVERABLE_FIELDS:
+
+        old_value = getattr(
+            original,
+            field,
+            None,
+        )
+
+        new_value = getattr(
+            candidate,
+            field,
+            None,
+        )
+
+        if old_value:
+            continue
+
+        if not new_value:
+            continue
+
+        repairs.append(
+            {
+                "field": field,
+                "old": old_value,
+                "new": new_value,
+                "rule":
+                    "metadata_recovery",
             }
         )
 

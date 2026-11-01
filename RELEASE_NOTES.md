@@ -1,15 +1,16 @@
-# dontfeartheripper v0.1.4
+# dontfeartheripper v0.1.5
 
 ## Highlights
 
-v0.1.4 introduces the foundation for container-aware metadata recovery.
+v0.1.5 introduces a complete metadata recovery engine and significantly improves container modelling.
 
-The project now contains four major subsystems:
+The project now contains:
 
-- Recursive Library Discovery
+- Recursive Discovery Engine
+- Cover Management Engine
 - Container Engine
-- Cover Management
 - Metadata Recovery Engine
+- Jellyfin Collection Foundation
 
 ---
 
@@ -20,19 +21,27 @@ New:
 - TrackMetadata abstraction
 - format-independent metadata model
 - recovery candidate builder
-- repair operation builder
+- full metadata recovery operations
+- NFO-first metadata recovery
+- nearest album.nfo discovery
 - container-aware recovery
-- container metadata context resolution
+- container-aware repair
 
 Recovery priority:
 
 1. local metadata
-2. container metadata
-3. album.nfo
-4. TOC/CUE metadata
+2. album.nfo
+3. container metadata
+4. TOC/CUE
 5. MusicBrainz
 
 Local metadata always wins.
+
+Successful real-world recovery examples:
+
+- Frostpunk → Piotr Musiał
+- Cyberpunk 2077 → Marcin Przybylowicz
+- The Thaumaturge → Agnieszka Wlazly
 
 ---
 
@@ -42,44 +51,66 @@ Supported container types:
 
 - artist_container
 - disc_container
-- edition_container
+- format_container
 - soundtrack_container
 - generic_container
 
 Features:
 
-- recursive container discovery
-- nested container discovery
-- root-container detection
+- recursive discovery
+- nested containers
+- root-container selection
 - container relationships
-- container metadata
-- jellyfin collection foundation
+- container metadata generation
 
-Generated:
+Generated files:
 
 - .dftr-container.json
 - collection.nfo
 - poster.jpg
 
-Container metadata includes:
+Metadata includes:
 
 - container_id
 - parent_container
 - container_type
 - album_count
 - container_depth
+- schema_version
+- generated_version
+
+---
+
+## Jellyfin Collection Foundation
+
+Container processing generates:
+
+- collection.nfo
+- poster.jpg
+
+Collection metadata includes:
+
+- title
+- uniqueid
+- overview
+- type
+- albumcount
+- depth
+- dateadded
 
 ---
 
 ## Cover Management
 
+Features:
+
 - MusicBrainz integration
 - Cover Art Archive integration
-- recursive artwork lookup
+- recursive artwork discovery
 - download planning
-- automatic cover downloads
+- cover download support
 
-Commands:
+Supported commands:
 
     dftr cover
     dftr cover --fetch
@@ -88,23 +119,18 @@ Commands:
 
 ---
 
-## Recursive Discovery
+## Quality Engine
 
-Recursive library scanning now supports:
+Improvements:
 
-- FLAC
-- MP3
-- M4A
-- AAC
-- OGG
-- OPUS
-- WAV
-- APE
-- WV
+- container-aware quality analysis
+- reduced container-related false positives
+- improved metadata source attribution
+- NFO-aware quality evaluation
 
 ---
 
 ## Testing
 
-    46 passed
-    0 failed
+54 passed
+0 failed

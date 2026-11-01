@@ -2,7 +2,7 @@
 
 Music library auditing, metadata recovery, artwork management and container discovery for large self-hosted music collections.
 
-dontfeartheripper is designed for archives that have grown over many years through:
+dontfeartheripper is designed for collections built from:
 
 - Exact Audio Copy (EAC)
 - CUERipper
@@ -11,12 +11,14 @@ dontfeartheripper is designed for archives that have grown over many years throu
 - soundtrack archives
 - artist discographies
 - multi-disc releases
+- deluxe editions
 
 The project focuses on:
 
 - library analysis
 - metadata repair
-- cover management
+- metadata recovery
+- artwork management
 - container discovery
 - collection metadata generation
 - Jellyfin preparation
@@ -32,7 +34,7 @@ The project focuses on:
 
 ### Install
 
-Clone:
+Clone repository:
 
     git clone https://github.com/fnngn/dontfeartheripper.git
 
@@ -121,13 +123,12 @@ JSON:
 
     dftr quality /music --json
 
-Checks:
+Evaluates:
 
-- missing artists
-- missing albums
-- weak metadata sources
-- inconsistent compilation metadata
-- container metadata issues
+- metadata completeness
+- metadata source quality
+- container consistency
+- naming consistency
 
 ---
 
@@ -145,12 +146,13 @@ Undo:
 
     dftr repair-undo
 
-Current repair rules:
+Supports:
 
-- missing_artist
-- various_uppercase
-- various_mixed
-- recovery candidate generation
+- artist recovery
+- albumartist recovery
+- album recovery
+- NFO recovery
+- container-aware recovery
 
 ---
 
@@ -193,15 +195,15 @@ Sources:
 - MusicBrainz
 - Cover Art Archive
 
-Recognized filenames:
+Recognized artwork:
 
-    cover.*
-    folder.*
-    front.*
-    artwork.*
-    albumart.*
+- cover.*
+- folder.*
+- front.*
+- artwork.*
+- albumart.*
 
-Downloaded artwork is normalized to:
+Normalized output:
 
     cover.jpg
 
@@ -216,7 +218,7 @@ Compatible with:
 
 ## Container Engine
 
-Detect containers:
+Detect:
 
     dftr container /music
 
@@ -228,44 +230,57 @@ Supported container types:
 
 - artist_container
 - disc_container
-- edition_container
+- format_container
 - soundtrack_container
 - generic_container
 
-Generated files:
+Examples:
+
+### Artist Container
+
+    Truckfighters
+    ├── Gravity X
+    ├── Mania
+    ├── Phi
+    └── Fuzzsplit of the Century
+
+### Disc Container
+
+    Tea For The Tillerman (Super Deluxe)
+    ├── Disc 1
+    ├── Disc 2
+    ├── Disc 3
+    └── Disc 4
+
+### Format Container
+
+    Frostpunk Original Soundtrack
+    ├── FLAC
+    └── WAV
+
+Generated:
 
     .dftr-container.json
     collection.nfo
     poster.jpg
 
-Metadata fields:
+Metadata includes:
 
 - container_id
 - parent_container
 - container_type
 - album_count
 - container_depth
-- schema_version
-- generated_version
-
-Examples:
-
-- artist discographies
-- soundtrack collections
-- edition collections
-- multi-disc releases
 
 ---
 
 ## Metadata Recovery Engine
 
-The metadata recovery engine is container-aware.
-
 Recovery priority:
 
 1. local metadata
-2. container metadata
-3. album.nfo
+2. album.nfo
+3. container metadata
 4. TOC/CUE
 5. MusicBrainz
 
@@ -277,28 +292,27 @@ Core components:
 - Recovery Candidate Builder
 - Recovery Operations
 - Container Context Resolution
+- nearest album.nfo lookup
+
+Real-world examples:
+
+- Cyberpunk 2077 → Marcin Przybylowicz
+- Frostpunk → Piotr Musiał
+- The Thaumaturge → Agnieszka Wlazly
 
 ---
 
 ## Jellyfin Collection Foundation
 
-Generated collection metadata:
+Generated metadata:
 
     collection.nfo
-
-contains:
-
-- title
-- uniqueid
-- overview
-- type
-- albumcount
-- depth
-- dateadded
 
 Generated artwork:
 
     poster.jpg
+
+Provides a foundation for Jellyfin collection handling.
 
 ---
 
@@ -314,7 +328,7 @@ Available for:
     dftr cover --fetch --json
     dftr cover --plan --json
 
-All outputs contain:
+All outputs include:
 
     {
       "schema_version": 1
@@ -324,17 +338,14 @@ All outputs contain:
 
 ## Safety
 
-dontfeartheripper follows a dry-run-first workflow.
-
 Features:
 
 - dry-run by default
 - explicit --yes required
-- rename rollback
 - metadata rollback
-- download planning
+- rename rollback
 - collision protection
-- recursive discovery
+- container-aware processing
 
 ---
 
@@ -346,7 +357,11 @@ Run:
 
 Current status:
 
-    46 tests passing
+    54 tests passing
+
+Quality example:
+
+    Quality Score: 100%
 
 ---
 

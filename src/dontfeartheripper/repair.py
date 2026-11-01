@@ -7,7 +7,9 @@ from .container import resolve_container_context
 from .recovery import (
     build_recovery_candidate,
     build_repair_operations,
+    build_full_repair_operations,
 )
+from .nfo import parse_album_nfo
 from .tags2 import TrackMetadata
 
 REPAIR_UNDO_FILE = Path(".dftr-last-repair.json")
@@ -19,6 +21,33 @@ def find_flac_files(directory):
         for path in directory.glob("*.flac")
         if path.is_file()
     )
+
+
+
+
+def find_nearest_album_nfo(
+    start_path,
+):
+
+    current = Path(
+        start_path
+    ).resolve()
+
+    for directory in (
+        current,
+        *current.parents,
+    ):
+
+        candidate = (
+            directory
+            / "album.nfo"
+        )
+
+        if candidate.exists():
+            return candidate
+
+    return None
+
 
 
 def analyze_repairs(items):
@@ -100,15 +129,129 @@ def analyze_repairs(items):
             album=item.album_name,
         )
 
+        nfo_metadata = {}
+
+        nfo_file = (
+            find_nearest_album_nfo(
+                item.path
+            )
+        )
+
+        if (
+            nfo_file
+            and nfo_file.exists()
+        ):
+
+            try:
+
+                nfo_data = parse_album_nfo(
+                    nfo_file
+                )
+
+                if (
+                    nfo_data
+                    and nfo_data.get(
+                        "artist"
+                    )
+                ):
+
+                    nfo_metadata[
+                        "artist"
+                    ] = (
+                        nfo_data[
+                            "artist"
+                        ]
+                    )
+
+                if (
+                    nfo_data
+                    and nfo_data.get(
+                        "album"
+                    )
+                ):
+
+                    nfo_metadata[
+                        "album"
+                    ] = (
+                        nfo_data[
+                            "album"
+                        ]
+                    )
+
+                if (
+                    nfo_data
+                    and nfo_data.get(
+                        "albumartist"
+                    )
+                ):
+
+                    nfo_metadata[
+                        "albumartist"
+                    ] = (
+                        nfo_data[
+                            "albumartist"
+                        ]
+                    )
+
+            except Exception:
+
+                pass
+
+        container_metadata = {}
+
+        if (
+            context
+            and context.get(
+                "container_type"
+            )
+            == "artist_container"
+        ):
+
+            artist_name = (
+                context.get(
+                    "name",
+                    ""
+                )
+            )
+
+            DISCGRAPHY_SUFFIXES = (
+                " - Discography",
+                " Discography",
+                " - Diskographie",
+                " Diskographie",
+                " Complete Discography",
+                " Collection",
+                " Anthology",
+            )
+
+            for suffix in DISCGRAPHY_SUFFIXES:
+
+                if artist_name.endswith(
+                    suffix
+                ):
+                    artist_name = (
+                        artist_name[
+                            :-len(suffix)
+                        ]
+                    ).strip()
+
+            container_metadata = {
+                "artist":
+                    artist_name,
+                "albumartist":
+                    artist_name,
+            }
+
         candidate = build_recovery_candidate(
             local,
-            container_metadata={
-                "artist": context.get("name"),
-            },
+            container_metadata=
+                container_metadata,
+            nfo_metadata=
+                nfo_metadata,
         )
 
         recovery_repairs = (
-            build_repair_operations(
+            build_full_repair_operations(
                 local,
                 candidate,
             )
